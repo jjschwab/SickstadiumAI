@@ -79,6 +79,9 @@ def extract_frames(video_path, scene):
     return frames
 
 def extract_best_scene(video_path, scene):
+    if scene is None:
+        return VideoFileClip(video_path)  # Return the entire video if no scene is found
+
     start_time = scene[0].get_seconds()
     end_time = scene[1].get_seconds()
     video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
