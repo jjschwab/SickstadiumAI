@@ -7,6 +7,7 @@ from transformers import CLIPProcessor, CLIPModel
 import torch
 import yt_dlp
 from PIL import Image
+import uuid
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
@@ -15,7 +16,7 @@ processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 def download_video(url):
     ydl_opts = {
         'format': 'bestvideo[height<=1440]+bestaudio/best[height<=1440]',
-        'outtmpl': 'downloaded_video.%(ext)s',
+        'outtmpl': f'temp_videos/{uuid.uuid4()}_video.%(ext)s',
         'merge_output_format': 'mp4',
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -111,8 +112,20 @@ def process_video(video_url, description):
     if final_clip:
         output_dir = "output"
         os.makedirs(output_dir, exist_ok=True)
-        final_clip_path = os.path.join(output_dir, "final_clip.mp4")
+        final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
         final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
+        cleanup_temp_files()
         return final_clip_path
     return None
+
+def cleanup_temp_files():
+    temp_dir = 'temp_videos'
+    if os.path.exists(temp_dir):
+        for file in os.listdir(temp_dir):
+            file_path = os.path.join(temp_dir, file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                print(f"Error: {e}")
 
