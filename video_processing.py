@@ -1,7 +1,7 @@
 import cv2
-from scenedetect import open_video, SceneManager
+from scenedetect import open_video, SceneManager, VideoManager
 from scenedetect.detectors import ContentDetector
-from moviepy.editor import VideoFileClip, concatenate_videoclips
+from moviepy.editor import VideoFileClip
 from transformers import CLIPProcessor, CLIPModel
 import torch
 import yt_dlp
@@ -12,7 +12,7 @@ def process_video(video_url, description):
     video_path = download_video(video_url)
 
     # Segment video into scenes
-    scenes = detect_scenes(video_path)
+    scenes = find_scenes(video_path)
 
     # Extract frames and analyze with CLIP model
     best_scene = analyze_scenes(video_path, scenes, description)
@@ -33,13 +33,29 @@ def process_video(video_url, description):
 
     return final_clip_path
 
-def detect_scenes(video_path):
-    video = open_video(video_path)
+def find_scenes(video_path):
+    # Create a video manager object for the video
+    video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector())
-    scene_manager.detect_scenes(video)
+
+    # Add ContentDetector algorithm with a threshold. Adjust threshold as needed.
+    scene_manager.add_detector(ContentDetector(threshold=30))
+
+    # Start the video manager and perform scene detection
+    video_manager.set_downscale_factor()
+    video_manager.start()
+    scene_manager.detect_scenes(frame_source=video_manager)
+
+    # Obtain list of detected scenes as timecodes
     scene_list = scene_manager.get_scene_list()
+    video_manager.release()
+
     return scene_list
+
+def convert_timestamp_to_seconds(timestamp):
+    """Convert a timestamp in HH:MM:SS format to seconds."""
+    h, m, s = map(float, timestamp.split(':'))
+    return int(h) * 3600 + int(m) * 60 + s
 
 def analyze_scenes(video_path, scenes, description):
     # Load CLIP model and processor
@@ -82,9 +98,11 @@ def extract_best_scene(video_path, scene):
     if scene is None:
         return VideoFileClip(video_path)  # Return the entire video if no scene is found
 
-    start_time = scene[0].get_seconds()
-    end_time = scene[1].get_seconds()
-    video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
+    start_time = scene[0].get_timecode()
+    end_time = scene[1].get_timecode()
+    start_seconds = convert_timestamp_to_seconds(start_time)
+    end_seconds = convert_timestamp_to_seconds(end_time)
+    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     return video_clip
 
 def download_video(video_url):
