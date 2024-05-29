@@ -1,11 +1,11 @@
+import os
 import cv2
-from scenedetect import open_video, SceneManager, VideoManager
+from scenedetect import VideoManager, SceneManager
 from scenedetect.detectors import ContentDetector
 from moviepy.editor import VideoFileClip
 from transformers import CLIPProcessor, CLIPModel
 import torch
 import yt_dlp
-import os
 
 def process_video(video_url, description):
     # Download or load the video from the URL
@@ -29,7 +29,7 @@ def process_video(video_url, description):
     try:
         if os.path.exists(final_clip_path):
             os.remove(final_clip_path)
-        final_clip.write_videofile(final_clip_path)
+        final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
     except Exception as e:
         return str(e)
 
@@ -52,7 +52,7 @@ def find_scenes(video_path):
     scene_list = scene_manager.get_scene_list()
     video_manager.release()
 
-    # Collect the start and end times for each scene
+    # Format the list of scenes as start and end timecodes
     scenes = [(start.get_timecode(), end.get_timecode()) for start, end in scene_list]
     return scenes
 
@@ -60,6 +60,18 @@ def convert_timestamp_to_seconds(timestamp):
     """Convert a timestamp in HH:MM:SS format to seconds."""
     h, m, s = map(float, timestamp.split(':'))
     return int(h) * 3600 + int(m) * 60 + s
+
+def extract_frames(video_path, start_time, end_time):
+    frames = []
+    start_seconds = convert_timestamp_to_seconds(start_time)
+    end_seconds = convert_timestamp_to_seconds(end_time)
+    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
+
+    for frame_time in range(0, int(video_clip.duration), 5):
+        frame = video_clip.get_frame(frame_time)
+        frames.append(frame)
+
+    return frames
 
 def analyze_scenes(video_path, scenes, description):
     # Load CLIP model and processor
@@ -69,7 +81,7 @@ def analyze_scenes(video_path, scenes, description):
     best_scene = None
     highest_prob = 0.0
 
-    for scene_id, (start_time, end_time) in enumerate(scenes):
+    for start_time, end_time in scenes:
         # Extract every 5th frame from the scene
         frames = extract_frames(video_path, start_time, end_time)
 
@@ -86,18 +98,6 @@ def analyze_scenes(video_path, scenes, description):
                 best_scene = (start_time, end_time)
 
     return best_scene
-
-def extract_frames(video_path, start_time, end_time):
-    frames = []
-    start_seconds = convert_timestamp_to_seconds(start_time)
-    end_seconds = convert_timestamp_to_seconds(end_time)
-    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
-
-    for frame_time in range(0, int(video_clip.duration), 5):
-        frame = video_clip.get_frame(frame_time)
-        frames.append(frame)
-
-    return frames
 
 def extract_best_scene(video_path, scene):
     if scene is None:
