@@ -15,10 +15,10 @@ def process_video(video_url, description):
     scenes = detect_scenes(video_path)
 
     # Extract frames and analyze with CLIP model
-    best_scenes = analyze_scenes(video_path, scenes, description)
+    best_scene = analyze_scenes(video_path, scenes, description)
 
-    # Combine best scenes into a final clip
-    final_clip = combine_scenes(video_path, best_scenes)
+    # Extract the best scene into a final clip
+    final_clip = extract_best_scene(video_path, best_scene)
 
     # Ensure the output directory exists
     output_dir = "output"
@@ -46,7 +46,8 @@ def analyze_scenes(video_path, scenes, description):
     model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
     processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-    best_scenes = []
+    best_scene = None
+    highest_prob = 0.0
 
     for scene in scenes:
         # Extract every 5th frame from the scene
@@ -59,12 +60,12 @@ def analyze_scenes(video_path, scenes, description):
             logits_per_image = outputs.logits_per_image
             probs = logits_per_image.softmax(dim=1)
             
-            # Store scenes with high probabilities for the description
-            if max(probs) > 0.5:  # Define a suitable threshold
-                best_scenes.append(scene)
-                break
+            max_prob = max(probs[0]).item()
+            if max_prob > highest_prob:
+                highest_prob = max_prob
+                best_scene = scene
 
-    return best_scenes
+    return best_scene
 
 def extract_frames(video_path, scene):
     frames = []
@@ -77,9 +78,11 @@ def extract_frames(video_path, scene):
 
     return frames
 
-def combine_scenes(video_path, scenes):
-    final_clip = concatenate_videoclips([VideoFileClip(video_path).subclip(scene[0].get_seconds(), scene[1].get_seconds()) for scene in scenes])
-    return final_clip
+def extract_best_scene(video_path, scene):
+    start_time = scene[0].get_seconds()
+    end_time = scene[1].get_seconds()
+    video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
+    return video_clip
 
 def download_video(video_url):
     ydl_opts = {
@@ -93,4 +96,3 @@ def download_video(video_url):
         video_file = ydl.prepare_filename(info_dict)
     
     return video_file
-
