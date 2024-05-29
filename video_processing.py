@@ -20,9 +20,17 @@ def process_video(video_url, description):
     # Combine best scenes into a final clip
     final_clip = combine_scenes(video_path, best_scenes)
 
+    # Ensure the output directory exists
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
+    final_clip_path = os.path.join(output_dir, "final_clip.mp4")
+
     # Save and return the final clip
-    final_clip_path = "output/final_clip.mp4"
-    final_clip.write_videofile(final_clip_path)
+    try:
+        final_clip.write_videofile(final_clip_path)
+    except Exception as e:
+        return str(e)
+
     return final_clip_path
 
 def detect_scenes(video_path):
