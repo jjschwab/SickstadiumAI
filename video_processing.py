@@ -27,6 +27,8 @@ def process_video(video_url, description):
 
     # Save and return the final clip
     try:
+        if os.path.exists(final_clip_path):
+            os.remove(final_clip_path)
         final_clip.write_videofile(final_clip_path)
     except Exception as e:
         return str(e)
@@ -117,3 +119,4 @@ def download_video(video_url):
         video_file = ydl.prepare_filename(info_dict)
     
     return video_file
+
