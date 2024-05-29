@@ -52,7 +52,9 @@ def find_scenes(video_path):
     scene_list = scene_manager.get_scene_list()
     video_manager.release()
 
-    return scene_list
+    # Collect the start and end times for each scene
+    scenes = [(start.get_timecode(), end.get_timecode()) for start, end in scene_list]
+    return scenes
 
 def convert_timestamp_to_seconds(timestamp):
     """Convert a timestamp in HH:MM:SS format to seconds."""
@@ -67,9 +69,9 @@ def analyze_scenes(video_path, scenes, description):
     best_scene = None
     highest_prob = 0.0
 
-    for scene in scenes:
+    for scene_id, (start_time, end_time) in enumerate(scenes):
         # Extract every 5th frame from the scene
-        frames = extract_frames(video_path, scene)
+        frames = extract_frames(video_path, start_time, end_time)
 
         # Analyze frames with CLIP
         for frame in frames:
@@ -81,17 +83,18 @@ def analyze_scenes(video_path, scenes, description):
             max_prob = max(probs[0]).item()
             if max_prob > highest_prob:
                 highest_prob = max_prob
-                best_scene = scene
+                best_scene = (start_time, end_time)
 
     return best_scene
 
-def extract_frames(video_path, scene):
+def extract_frames(video_path, start_time, end_time):
     frames = []
-    start_frame, end_frame = scene[0].get_frames(), scene[1].get_frames()
-    video_clip = VideoFileClip(video_path)
+    start_seconds = convert_timestamp_to_seconds(start_time)
+    end_seconds = convert_timestamp_to_seconds(end_time)
+    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
 
-    for frame_num in range(start_frame, end_frame, 5):
-        frame = video_clip.get_frame(frame_num / video_clip.fps)
+    for frame_time in range(0, int(video_clip.duration), 5):
+        frame = video_clip.get_frame(frame_time)
         frames.append(frame)
 
     return frames
@@ -100,8 +103,7 @@ def extract_best_scene(video_path, scene):
     if scene is None:
         return VideoFileClip(video_path)  # Return the entire video if no scene is found
 
-    start_time = scene[0].get_timecode()
-    end_time = scene[1].get_timecode()
+    start_time, end_time = scene
     start_seconds = convert_timestamp_to_seconds(start_time)
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
