@@ -59,6 +59,10 @@ def analyze_scenes(video_path, scenes, description):
     highest_prob = 0.0
     best_scene = None
 
+    # Tokenize and encode the description text
+    text_inputs = processor(text=[description], return_tensors="pt", padding=True).to(device)
+    text_features = model.get_text_features(**text_inputs).detach()
+
     for scene_num, (start_time, end_time) in enumerate(scenes):
         frames = extract_frames(video_path, start_time, end_time)
         if not frames:
@@ -68,12 +72,11 @@ def analyze_scenes(video_path, scenes, description):
         scene_prob = 0.0
         for frame in frames:
             image = Image.fromarray(frame[..., ::-1])
-            inputs = processor(text=description, images=image, return_tensors="pt", padding=True).to(device)
+            image_input = processor(images=image, return_tensors="pt").to(device)
             with torch.no_grad():
-                outputs = model(**inputs)
-                logits_per_image = outputs.logits_per_image
-                probs = logits_per_image.softmax(dim=1)
-                scene_prob += probs[0][0].item()  # Get the probability of the first class
+                image_features = model.get_image_features(**image_input).detach()
+                logits_per_image = torch.cosine_similarity(image_features, text_features)
+                scene_prob += logits_per_image.item()
 
         scene_prob /= len(frames)
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}")
@@ -112,3 +115,4 @@ def process_video(video_url, description):
         final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
         return final_clip_path
     return None
+
