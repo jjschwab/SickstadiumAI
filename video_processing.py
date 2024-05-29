@@ -6,6 +6,7 @@ from moviepy.editor import VideoFileClip
 from transformers import CLIPProcessor, CLIPModel
 import torch
 import yt_dlp
+from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
@@ -61,14 +62,16 @@ def analyze_scenes(video_path, scenes, description):
     for start_time, end_time in scenes:
         frames = extract_frames(video_path, start_time, end_time)
         for frame in frames:
-            inputs = processor(text=description, images=frame, return_tensors="pt", padding=True)
-            outputs = model(**inputs)
-            logits_per_image = outputs.logits_per_image
-            probs = logits_per_image.softmax(dim=1)
-            max_prob = max(probs[0]).item()
-            if max_prob > highest_prob:
-                highest_prob = max_prob
-                best_scene = (start_time, end_time)
+            image = Image.fromarray(frame[..., ::-1])
+            inputs = processor(text=description, images=image, return_tensors="pt", padding=True).to(device)
+            with torch.no_grad():
+                outputs = model(**inputs)
+                logits_per_image = outputs.logits_per_image
+                probs = logits_per_image.softmax(dim=1)
+                max_prob = max(probs[0]).item()
+                if max_prob > highest_prob:
+                    highest_prob = max_prob
+                    best_scene = (start_time, end_time)
 
     return best_scene
 
