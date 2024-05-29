@@ -17,5 +17,3 @@ with gr.Blocks() as demo:
     submit_button.click(fn=display_results, inputs=[video_url, description], outputs=[video_output, download_output])
 
 demo.launch()
-
-
