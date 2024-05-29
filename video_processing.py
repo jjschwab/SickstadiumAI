@@ -59,8 +59,9 @@ def analyze_scenes(video_path, scenes, description):
     highest_prob = 0.0
     best_scene = None
 
-    for start_time, end_time in scenes:
+    for scene_num, (start_time, end_time) in enumerate(scenes):
         frames = extract_frames(video_path, start_time, end_time)
+        scene_prob = 0.0
         for frame in frames:
             image = Image.fromarray(frame[..., ::-1])
             inputs = processor(text=description, images=image, return_tensors="pt", padding=True).to(device)
@@ -68,11 +69,17 @@ def analyze_scenes(video_path, scenes, description):
                 outputs = model(**inputs)
                 logits_per_image = outputs.logits_per_image
                 probs = logits_per_image.softmax(dim=1)
-                max_prob = max(probs[0]).item()
-                if max_prob > highest_prob:
-                    highest_prob = max_prob
-                    best_scene = (start_time, end_time)
+                scene_prob += max(probs[0]).item()
 
+        # Average the probabilities over the frames
+        scene_prob /= len(frames)
+        print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}")
+
+        if scene_prob > highest_prob:
+            highest_prob = scene_prob
+            best_scene = (start_time, end_time)
+
+    print(f"Best Scene: Start={best_scene[0]}, End={best_scene[1]}, Probability={highest_prob}")
     return best_scene
 
 def extract_best_scene(video_path, scene):
