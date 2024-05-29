@@ -7,117 +7,139 @@ from transformers import CLIPProcessor, CLIPModel
 import torch
 import yt_dlp
 
-def process_video(video_url, description):
-    # Download or load the video from the URL
-    video_path = download_video(video_url)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-    # Segment video into scenes
-    scenes = find_scenes(video_path)
-
-    # Extract frames and analyze with CLIP model
-    best_scene = analyze_scenes(video_path, scenes, description)
-
-    # Extract the best scene into a final clip
-    final_clip = extract_best_scene(video_path, best_scene)
-
-    # Ensure the output directory exists
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
-    final_clip_path = os.path.join(output_dir, "final_clip.mp4")
-
-    # Save and return the final clip
-    try:
-        if os.path.exists(final_clip_path):
-            os.remove(final_clip_path)
-        final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
-    except Exception as e:
-        return str(e)
-
-    return final_clip_path
-
-def find_scenes(video_path):
-    # Create a video manager object for the video
-    video_manager = VideoManager([video_path])
-    scene_manager = SceneManager()
-
-    # Add ContentDetector algorithm with a threshold. Adjust threshold as needed.
-    scene_manager.add_detector(ContentDetector(threshold=30))
-
-    # Start the video manager and perform scene detection
-    video_manager.set_downscale_factor()
-    video_manager.start()
-    scene_manager.detect_scenes(frame_source=video_manager)
-
-    # Obtain list of detected scenes as timecodes
-    scene_list = scene_manager.get_scene_list()
-    video_manager.release()
-
-    # Format the list of scenes as start and end timecodes
-    scenes = [(start.get_timecode(), end.get_timecode()) for start, end in scene_list]
-    return scenes
-
-def convert_timestamp_to_seconds(timestamp):
-    """Convert a timestamp in HH:MM:SS format to seconds."""
-    h, m, s = map(float, timestamp.split(':'))
-    return int(h) * 3600 + int(m) * 60 + s
-
-def extract_frames(video_path, start_time, end_time):
-    frames = []
-    start_seconds = convert_timestamp_to_seconds(start_time)
-    end_seconds = convert_timestamp_to_seconds(end_time)
-    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
-
-    for frame_time in range(0, int(video_clip.duration), 5):
-        frame = video_clip.get_frame(frame_time)
-        frames.append(frame)
-
-    return frames
-
-def analyze_scenes(video_path, scenes, description):
-    # Load CLIP model and processor
-    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-
-    best_scene = None
-    highest_prob = 0.0
-
-    for start_time, end_time in scenes:
-        # Extract every 5th frame from the scene
-        frames = extract_frames(video_path, start_time, end_time)
-
-        # Analyze frames with CLIP
-        for frame in frames:
-            inputs = processor(text=description, images=frame, return_tensors="pt", padding=True)
-            outputs = model(**inputs)
-            logits_per_image = outputs.logits_per_image
-            probs = logits_per_image.softmax(dim=1)
-            
-            max_prob = max(probs[0]).item()
-            if max_prob > highest_prob:
-                highest_prob = max_prob
-                best_scene = (start_time, end_time)
-
-    return best_scene
-
-def extract_best_scene(video_path, scene):
-    if scene is None:
-        return VideoFileClip(video_path)  # Return the entire video if no scene is found
-
-    start_time, end_time = scene
-    start_seconds = convert_timestamp_to_seconds(start_time)
-    end_seconds = convert_timestamp_to_seconds(end_time)
-    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
-    return video_clip
-
-def download_video(video_url):
+def download_video(url):
     ydl_opts = {
         'format': 'bestvideo[height<=1440]+bestaudio/best[height<=1440]',
         'outtmpl': 'downloaded_video.%(ext)s',
-        'noplaylist': True,
+        'merge_output_format': 'mp4',
     }
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(video_url, download=True)
-        video_file = ydl.prepare_filename(info_dict)
-    
-    return video_file
+        result = ydl.extract_info(url, download=True)
+        video_filename = ydl.prepare_filename(result)
+        safe_filename = sanitize_filename(video_filename)
+        if os.path.exists(video_filename) and video_filename != safe_filename:
+            os.rename(video_filename, safe_filename)
+        return safe_filename
+
+def sanitize_filename(filename):
+    return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
+
+def find_scenes(video_path):
+    video_manager = VideoManager([video_path])
+    scene_manager = SceneManager()
+    scene_manager.add_detector(ContentDetector(threshold=30))
+    video_manager.set_downscale_factor()
+    video_manager.start()
+    scene_manager.detect_scenes(frame_source=video_manager)
+    scene_list = scene_manager.get_scene_list()
+    video_manager.release()
+    return scene_list
+
+def extract_frames(video_path, scene_list):
+    scene_frames = {}
+    cap = cv2.VideoCapture(video_path)
+    for i, (start_time, end_time) in enumerate(scene_list):
+        frames = []
+        first_frame = None
+        start_frame = start_time.get_frames()
+        end_frame = end_time.get_frames()
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        while cap.get(cv2.CAP_PROP_POS_FRAMES) < end_frame:
+            ret, frame = cap.read()
+            if ret:
+                if first_frame is None:
+                    first_frame = frame
+                if int(cap.get(cv2.CAP_PROP_POS_FRAMES)) % 5 == 0:
+                    frames.append(frame)
+        scene_frames[i] = (start_time, end_time, frames, first_frame)
+    cap.release()
+    return scene_frames
+
+def convert_timestamp_to_seconds(timestamp):
+    h, m, s = map(float, timestamp.split(':'))
+    return int(h) * 3600 + int(m) * 60 + s
+
+def classify_and_categorize_scenes(scene_frames, description_phrases):
+    scene_categories = {}
+    description_texts = description_phrases
+
+    action_indices = [0]
+    context_indices = list(set(range(len(description_texts))) - set(action_indices))
+
+    for scene_id, (start_time, end_time, frames, first_frame) in scene_frames.items():
+        scene_scores = [0] * len(description_texts)
+        valid_frames = 0
+
+        for frame in frames:
+            image = Image.fromarray(frame[..., ::-1])
+            image_input = processor(images=image, return_tensors="pt").to(device)
+            with torch.no_grad():
+                text_inputs = processor(text=description_texts, return_tensors="pt", padding=True).to(device)
+                text_features = model.get_text_features(**text_inputs)
+                image_features = model.get_image_features(**image_input)
+                logits = (image_features @ text_features.T).squeeze()
+                probs = logits.softmax(dim=0)
+                scene_scores = [sum(x) for x in zip(scene_scores, probs.tolist())]
+                valid_frames += 1
+
+        if valid_frames > 0:
+            scene_scores = [score / valid_frames for score in scene_scores]
+            action_confidence = sum(scene_scores[i] for i in action_indices) / len(action_indices)
+            context_confidence = sum(scene_scores[i] for i in context_indices) / len(context_indices)
+
+            best_description_index = scene_scores.index(max(scene_scores))
+            best_description = description_texts[best_description_index]
+
+            if action_confidence > context_confidence:
+                category = "Action Scene"
+                confidence = action_confidence
+            else:
+                category = "Context Scene"
+                confidence = context_confidence
+
+            duration = end_time.get_seconds() - start_time.get_seconds()
+            scene_categories[scene_id] = {
+                "category": category,
+                "confidence": confidence,
+                "start_time": str(start_time),
+                "end_time": str(end_time),
+                "duration": duration,
+                "first_frame": first_frame,
+                "best_description": best_description
+            }
+
+    return scene_categories
+
+def save_clip(video_path, scene_info, output_directory, scene_id):
+    output_filename = f"scene_{scene_id+1}_{scene_info['category'].replace(' ', '_')}.mp4"
+    output_filepath = os.path.join(output_directory, output_filename)
+
+    start_seconds = convert_timestamp_to_seconds(scene_info['start_time'])
+    end_seconds = convert_timestamp_to_seconds(scene_info['end_time'])
+
+    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
+
+    video_clip.write_videofile(output_filepath, codec='libx264', audio_codec='aac')
+    video_clip.close()
+
+    return output_filepath, scene_info['first_frame']
+
+def process_video(video_url, description):
+    output_directory = "output"
+    os.makedirs(output_directory, exist_ok=True)
+
+    video_path = download_video(video_url)
+    scenes = find_scenes(video_path)
+    scene_frames = extract_frames(video_path, scenes)
+    description_phrases = [description]  # Modify if multiple descriptions are needed
+    scene_categories = classify_and_categorize_scenes(scene_frames, description_phrases)
+
+    best_scene = max(scene_categories.items(), key=lambda x: x[1]['confidence'])[1]
+    clip_path, first_frame = save_clip(video_path, best_scene, output_directory, 0)
+
+    return clip_path
+
