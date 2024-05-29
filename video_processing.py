@@ -50,7 +50,7 @@ def extract_frames(video_path, start_time, end_time):
     start_seconds = convert_timestamp_to_seconds(start_time)
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
-    for frame_time in range(0, int(video_clip.duration * video_clip.fps), 5):
+    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 2)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
     return frames
@@ -73,7 +73,7 @@ def analyze_scenes(video_path, scenes, description):
                 outputs = model(**inputs)
                 logits_per_image = outputs.logits_per_image
                 probs = logits_per_image.softmax(dim=1)
-                scene_prob += max(probs[0]).item()
+                scene_prob += probs[0][0].item()  # Get the probability of the first class
 
         scene_prob /= len(frames)
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}")
