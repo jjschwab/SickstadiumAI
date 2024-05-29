@@ -1,5 +1,5 @@
 import cv2
-from scenedetect import VideoManager, SceneManager
+from scenedetect import open_video, SceneManager
 from scenedetect.detectors import ContentDetector
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from transformers import CLIPProcessor, CLIPModel
@@ -15,10 +15,10 @@ def process_video(video_url, description):
     scenes = detect_scenes(video_path)
 
     # Extract frames and analyze with CLIP model
-    best_scenes = analyze_scenes(scenes, description)
+    best_scenes = analyze_scenes(video_path, scenes, description)
 
     # Combine best scenes into a final clip
-    final_clip = combine_scenes(best_scenes)
+    final_clip = combine_scenes(video_path, best_scenes)
 
     # Save and return the final clip
     final_clip_path = "output/final_clip.mp4"
@@ -26,18 +26,14 @@ def process_video(video_url, description):
     return final_clip_path
 
 def detect_scenes(video_path):
-    video_manager = VideoManager([video_path])
+    video = open_video(video_path)
     scene_manager = SceneManager()
     scene_manager.add_detector(ContentDetector())
-    video_manager.start()
-
-    scene_manager.detect_scenes(frame_source=video_manager)
+    scene_manager.detect_scenes(video)
     scene_list = scene_manager.get_scene_list()
-    video_manager.release()
-    
     return scene_list
 
-def analyze_scenes(scenes, description):
+def analyze_scenes(video_path, scenes, description):
     # Load CLIP model and processor
     model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
     processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
@@ -46,7 +42,7 @@ def analyze_scenes(scenes, description):
 
     for scene in scenes:
         # Extract every 5th frame from the scene
-        frames = extract_frames(scene)
+        frames = extract_frames(video_path, scene)
 
         # Analyze frames with CLIP
         for frame in frames:
@@ -62,10 +58,10 @@ def analyze_scenes(scenes, description):
 
     return best_scenes
 
-def extract_frames(scene):
+def extract_frames(video_path, scene):
     frames = []
     start_frame, end_frame = scene[0].get_frames(), scene[1].get_frames()
-    video_clip = VideoFileClip(scene[0].get_filename())
+    video_clip = VideoFileClip(video_path)
 
     for frame_num in range(start_frame, end_frame, 5):
         frame = video_clip.get_frame(frame_num / video_clip.fps)
@@ -73,8 +69,8 @@ def extract_frames(scene):
 
     return frames
 
-def combine_scenes(scenes):
-    final_clip = concatenate_videoclips([VideoFileClip(scene[0].get_filename()).subclip(scene[0].get_seconds(), scene[1].get_seconds()) for scene in scenes])
+def combine_scenes(video_path, scenes):
+    final_clip = concatenate_videoclips([VideoFileClip(video_path).subclip(scene[0].get_seconds(), scene[1].get_seconds()) for scene in scenes])
     return final_clip
 
 def download_video(video_url):
@@ -89,3 +85,4 @@ def download_video(video_url):
         video_file = ydl.prepare_filename(info_dict)
     
     return video_file
+
