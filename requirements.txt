@@ -1,0 +1,8 @@
+gradio
+moviepy
+opencv-python
+numpy
+scenedetect
+transformers
+torch
+yt-dlp
