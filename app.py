@@ -89,7 +89,7 @@ h3{
 with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
         gr.Markdown("# Sickstadium AI", elem_classes="centered-markdown")
-        gr.Markdown("### This is a brief description for the webpage.", elem_classes="centered-markdown")
+        gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
         video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
         description = gr.Textbox(label="Description of desired clip", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
