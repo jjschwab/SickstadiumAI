@@ -15,12 +15,12 @@ class CustomTheme(Base):
         radius_size: sizes.Size | str = sizes.radius_md,
         text_size: sizes.Size | str = sizes.text_md,
         font: fonts.Font | str | Iterable[fonts.Font | str] = (
-            fonts.GoogleFont("Quicksand"),
+            fonts.GoogleFont("Roboto"),
             "ui-sans-serif",
             "sans-serif",
         ),
         font_mono: fonts.Font | str | Iterable[fonts.Font | str] = (
-            fonts.GoogleFont("IBM Plex Mono"),
+            fonts.GoogleFont("Roboto Mono"),
             "ui-monospace",
             "monospace",
         ),
