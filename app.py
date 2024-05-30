@@ -42,9 +42,9 @@ class CustomTheme(Base):
             block_title_text_color="#eb5726",
             block_label_text_color="#eb5726",
             button_primary_background_fill="#eb5726",
-            button_primary_background_fill_hover="#ffffff",
+            button_primary_background_fill_hover="#f5986e",  # Slightly lighter shade of orange
             button_primary_text_color="#ffffff",
-            button_primary_text_color_hover="#eb5726",
+            button_primary_text_color_hover="#ffffff",
         )
 
 custom_theme = CustomTheme()
@@ -59,11 +59,9 @@ def display_results(video_url, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image:
-        radial-gradient(#eb5726 1px, transparent 1px),
-        radial-gradient(circle at center, rgba(235, 87, 38, 1) 0%, rgba(235, 87, 38, 0) 70%);
-    background-size: 10px 10px, cover;
-    background-repeat: repeat, no-repeat;
+    background-image: radial-gradient(#eb5726 1px, transparent 1px);
+    background-size: 10px 10px;
+    background-repeat: repeat;
     background-attachment: fixed;
 }
 #video_url {
