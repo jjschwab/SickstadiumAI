@@ -42,9 +42,7 @@ class CustomTheme(Base):
             block_title_text_color="#eb5726",
             block_label_text_color="#eb5726",
             button_primary_background_fill="#eb5726",
-            button_primary_background_fill_hover="#f5986e",  # Slightly lighter shade of orange
             button_primary_text_color="#ffffff",
-            button_primary_text_color_hover="#ffffff",
         )
 
 custom_theme = CustomTheme()
@@ -79,6 +77,11 @@ body {
     color: #ffffff;
     border: 2px solid #ffffff;
 }
+#submit_button:hover {
+    background-color: #f5986e;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+}
 label[for="video_url"] {
     color: #eb5726 !important;
 }
@@ -94,7 +97,7 @@ h3 {
     padding: 10px;
 }
 #sickstadium-title {
-    font-size: 2.5em !important;
+    font-size: 3em !important;
     font-weight: bold;
     text-transform: uppercase;
 }
