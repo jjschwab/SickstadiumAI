@@ -40,8 +40,6 @@ class SimpleTheme(Base):
             body_text_color="#ffffff",
             block_background_fill="#ffffff",
             block_title_text_color="#282828",
-            input_background_fill="#ffffff",
-            input_text_color="#282828",
             block_label_text_color="#eb5726",
             button_primary_background_fill="#eb5726",
             button_primary_background_fill_hover="#ffffff",
