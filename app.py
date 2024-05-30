@@ -1,19 +1,19 @@
-from typing import Iterable
 import gradio as gr
 from video_processing import process_video
 from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
+from typing import Iterable
 
-class CustomTheme(Base):
+class SimpleTheme(Base):
     def __init__(
         self,
         *,
-        primary_hue: colors.Color | str = colors.emerald,
-        secondary_hue: colors.Color | str = colors.blue,
-        neutral_hue: colors.Color | str = colors.blue,
+        primary_hue: colors.Color | str = colors.orange,
+        secondary_hue: colors.Color | str = colors.orange,
+        neutral_hue: colors.Color | str = colors.gray,
         spacing_size: sizes.Size | str = sizes.spacing_md,
         radius_size: sizes.Size | str = sizes.radius_md,
-        text_size: sizes.Size | str = sizes.text_lg,
+        text_size: sizes.Size | str = sizes.text_md,
         font: fonts.Font | str | Iterable[fonts.Font | str] = (
             fonts.GoogleFont("Quicksand"),
             "ui-sans-serif",
@@ -36,28 +36,21 @@ class CustomTheme(Base):
             font_mono=font_mono,
         )
         super().set(
-            body_background_fill="#eb5726",
+            body_background_fill="#282828",
             body_text_color="#ffffff",
             block_background_fill="#ffffff",
             block_title_text_color="#282828",
-            input_background_fill="#ecf0f1",
-            input_text_color="#eb5726",
-            block_label_text_color="#eb5726",
-            input_label_text_color="#ffffff",
-            button_primary_background_fill="linear-gradient(90deg, *primary_300, *secondary_400)",
-            button_primary_background_fill_hover="linear-gradient(90deg, *primary_200, *secondary_300)",
-            button_primary_text_color="white",
-            button_primary_background_fill_dark="linear-gradient(90deg, *primary_600, *secondary_800)",
-            slider_color="*secondary_300",
-            slider_color_dark="*secondary_600",
-            block_title_text_weight="600",
-            block_border_width="3px",
-            block_shadow="*shadow_drop_lg",
-            button_shadow="*shadow_drop_lg",
-            button_large_padding="32px",
+            input_background_fill="#ffffff",
+            input_text_color="#282828",
+            input_border_color="#eb5726",
+            input_label_text_color="#eb5726",
+            button_primary_background_fill="#eb5726",
+            button_primary_background_fill_hover="#ffffff",
+            button_primary_text_color="#ffffff",
+            button_primary_text_color_hover="#eb5726",
         )
 
-custom_theme = CustomTheme()
+simple_theme = SimpleTheme()
 
 def display_results(video_url, description):
     final_clip_path = process_video(video_url, description)
@@ -65,7 +58,7 @@ def display_results(video_url, description):
         return final_clip_path, final_clip_path
     return "No matching scene found", None
 
-with gr.Blocks(theme=custom_theme) as demo:
+with gr.Blocks(theme=simple_theme) as demo:
     with gr.Column():
         gr.Markdown("# Sickstadium AI", elem_classes="centered-markdown")
         gr.Markdown("### This is a brief description for the webpage.", elem_classes="centered-markdown")
