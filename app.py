@@ -15,12 +15,12 @@ class CustomTheme(Base):
         radius_size: sizes.Size | str = sizes.radius_md,
         text_size: sizes.Size | str = sizes.text_md,
         font: fonts.Font | str | Iterable[fonts.Font | str] = (
-            fonts.GoogleFont("Roboto"),
+            fonts.GoogleFont("Sora"),
             "ui-sans-serif",
             "sans-serif",
         ),
         font_mono: fonts.Font | str | Iterable[fonts.Font | str] = (
-            fonts.GoogleFont("Roboto Mono"),
+            fonts.GoogleFont("Sora"),
             "ui-monospace",
             "monospace",
         ),
@@ -94,8 +94,9 @@ h3 {
     padding: 10px;
 }
 #sickstadium-title {
-    font-size: 2em !important;
+    font-size: 2.5em !important;
     font-weight: bold;
+    text-transform: uppercase;
 }
 """
 
