@@ -36,7 +36,7 @@ class CustomTheme(Base):
             font_mono=font_mono,
         )
         super().set(
-            body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 10%, rgba(235, 87, 38, 0.8) 20%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 40%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 60%, rgba(235, 87, 38, 0.3) 70%, rgba(235, 87, 38, 0.2) 80%, rgba(235, 87, 38, 0.1) 90%, rgba(255, 255, 255, 0) 100%), radial-gradient(#eb5726 1px, transparent 1px)",
+            body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 5%, rgba(235, 87, 38, 0.8) 25%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 60%, rgba(235, 87, 38, 0.5) 85%, rgba(235, 87, 38, 0.4) 99%, radial-gradient(#eb5726 1px, transparent 1px)",
             body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#eb5726",
