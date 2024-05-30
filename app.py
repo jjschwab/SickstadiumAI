@@ -10,20 +10,20 @@ def display_results(video_url, description):
 # Custom CSS
 css = """
 body {
-    background-color: #2c3e50;
+    background-color: #eb5726;
     color: #ecf0f1;
     font-family: 'Arial', sans-serif;
 }
 h1, h2, h3, h4, h5, h6 {
-    color: #ecf0f1;
+    color: #0b0d1a;
 }
 #video_url, #description {
-    background-color: #34495e;
+    background-color: #eb5726;
     color: #ecf0f1;
     border: 1px solid #ecf0f1;
 }
 #submit_button {
-    background-color: #e74c3c;
+    background-color: #eb5726;
     color: #ecf0f1;
     border: 1px solid #ecf0f1;
 }
@@ -31,12 +31,12 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #c0392b;
 }
 #video_output, #download_output {
-    border: 1px solid #ecf0f1;
+    border: 1px solid #eb5726;
 }
 """
 
 with gr.Blocks(css=css) as demo:
-    gr.Markdown("# My AI Video Processing App")
+    gr.Markdown("# Sickstadium AI")
     video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
     description = gr.Textbox(label="Description of desired clip", elem_id="description")
     video_output = gr.Video(label="Processed Video", elem_id="video_output")
