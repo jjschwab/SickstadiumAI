@@ -76,7 +76,7 @@ with gr.Blocks(css=css) as demo:
         gr.Markdown("# Sickstadium AI", elem_classes="centered-markdown")
         gr.Markdown("### Upload your video. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
         video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
-        description = gr.Textbox(label="Description of desired clip", elem_id="centered-markdown")
+        description = gr.Textbox(label="## Description of desired clip", elem_id="centered-markdown")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
         download_output = gr.File(label="Download Processed Video", elem_id="download_output")
