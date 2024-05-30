@@ -41,9 +41,8 @@ class SimpleTheme(Base):
             block_background_fill="#ffffff",
             block_title_text_color="#282828",
             input_background_fill="#ffffff",
-            input_text_color_light="#282828",  # Use the correct attribute name
-            input_border_color="#eb5726",
-            input_label_text_color="#eb5726",
+            input_text_color="#282828",
+            block_label_text_color="#eb5726",
             button_primary_background_fill="#eb5726",
             button_primary_background_fill_hover="#ffffff",
             button_primary_text_color="#ffffff",
