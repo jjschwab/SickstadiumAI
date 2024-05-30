@@ -36,7 +36,7 @@ class CustomTheme(Base):
             font_mono=font_mono,
         )
         super().set(
-            body_background_fill="radial-gradient(#eb5726 1px, transparent 1px), radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 10%, rgba(235, 87, 38, 0.8) 20%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 40%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 60%, rgba(235, 87, 38, 0.3) 70%, rgba(235, 87, 38, 0.2) 80%, rgba(235, 87, 38, 0.1) 90%, rgba(255, 255, 255, 0) 100%)",
+            body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 1) 0%, rgba(235, 87, 38, 0) 70%), #ffffff",
             body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#eb5726",
@@ -59,8 +59,10 @@ def display_results(video_url, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 20%, rgba(235, 87, 38, 0.8) 35%, rgba(235, 87, 38, 0.7) 55%, rgba(235, 87, 38, 0.6) 75%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 90%, rgba(235, 87, 38, 0.3) 99%, rgba(235, 87, 38, 0.2) 100%, rgba(235, 87, 38, 0.1) 100%, rgba(255, 255, 255, 0) 100%), radial-gradient(#eb5726 1px, transparent 1px);
+    background-image: radial-gradient(#eb5726 1px, transparent 1px);
     background-size: 10px 10px, 100% 100%;
+    background-repeat: repeat;
+    background-attachment: fixed;
 }
 #video_url {
     background-color: #ffffff;
