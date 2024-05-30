@@ -11,21 +11,26 @@ def display_results(video_url, description):
 css = """
 body {
     background-color: #eb5726;
-    color: #ecf0f1;
+    color: #ffffff;
     font-family: 'Arial', sans-serif;
 }
 h1, h2, h3, h4, h5, h6 {
-    color: #0b0d1a;
+    color: #282828;
 }
-#video_url, #description {
+#video_url {
     background-color: #eb5726;
     color: #ecf0f1;
     border: 1px solid #ecf0f1;
+}
+#description {
+    background-color: #ecf0f1;
+    color: #eb5726;
+    border: 1px solid #eb5726;
 }
 #submit_button {
-    background-color: #eb5726;
-    color: #ecf0f1;
-    border: 1px solid #ecf0f1;
+    background-color: #ffffff;
+    color: #F06230;
+    border: 1px solid #F06230;
 }
 #submit_button:hover {
     background-color: #c0392b;
