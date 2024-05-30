@@ -35,7 +35,7 @@ h6 {
 }
 #video_url {
     background-color: #eb5726;
-    color: #ecf0f1;
+    color: #ffffff;
     border: 2px solid #ecf0f1;
 }
 #description {
@@ -61,11 +61,18 @@ h6 {
     text-align: center;
     width: 100%;
 }
+.textbox-label {
+    color: #ffffff;
+}
+#description ~ label {
+    color: #eb5726;
+}
 """
 
 with gr.Blocks(css=css) as demo:
     with gr.Column():
         gr.Markdown("# Sickstadium AI", elem_classes="centered-markdown")
+        gr.Markdown("### Upload your video. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
         video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
         description = gr.Textbox(label="Description of desired clip", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
