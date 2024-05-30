@@ -52,14 +52,13 @@ def extract_frames(video_path, start_time, end_time):
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     # Extract more frames: every frame in the scene
-    for frame_time in range(0, int(video_clip.duration * video_clip.fps)):
+    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 5)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
     return frames
 
 def analyze_scenes(video_path, scenes, description):
-    highest_prob = float('-inf')
-    best_scene = None
+    scene_scores = []
 
     negative_descriptions = [
         "black screen",
@@ -89,18 +88,24 @@ def analyze_scenes(video_path, scenes, description):
                 scene_prob += positive_similarity - negative_similarities
 
         scene_prob /= len(frames)
-        print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}")
+        scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
+        print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}")
 
-        if scene_prob > highest_prob:
-            highest_prob = scene_prob
-            best_scene = (start_time, end_time)
+        scene_scores.append((scene_prob, start_time, end_time, scene_duration))
 
-    if best_scene:
-        print(f"Best Scene: Start={best_scene[0]}, End={best_scene[1]}, Probability={highest_prob}")
+    # Sort scenes by probability in descending order and select the top 5
+    scene_scores.sort(reverse=True, key=lambda x: x[0])
+    top_scenes = scene_scores[:5]
+
+    # Find the longest scene among the top 5
+    longest_scene = max(top_scenes, key=lambda x: x[3])
+
+    if longest_scene:
+        print(f"Longest Scene: Start={longest_scene[1]}, End={longest_scene[2]}, Probability={longest_scene[0]}, Duration={longest_scene[3]}")
     else:
         print("No suitable scene found")
 
-    return best_scene
+    return longest_scene[1:3] if longest_scene else None
 
 def extract_best_scene(video_path, scene):
     if scene is None:
