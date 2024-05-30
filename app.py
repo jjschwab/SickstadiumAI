@@ -39,7 +39,10 @@ h6 {
     border: 2px solid #ecf0f1;
     label: #ffffff
 }
-#description + label {
+label[for^="video_url"] {
+    color: #ffffff;
+}
+#description{
     background-color: #ecf0f1;
     color: #f0531f;
     border: 2px solid #eb5726;
