@@ -78,6 +78,9 @@ label[for="video_url"] {
 label[for="description"] {
     color: #eb5726 !important;
 }
+h3{
+    color: #eb5726
+}
 .centered-markdown {
     text-align: center;
 }
