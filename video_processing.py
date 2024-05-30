@@ -33,7 +33,7 @@ def sanitize_filename(filename):
 def find_scenes(video_path):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector(threshold=30))  # Adjusted threshold for finer segmentation
+    scene_manager.add_detector(ContentDetector(threshold=20))  # Adjusted threshold for finer segmentation
     video_manager.set_downscale_factor()
     video_manager.start()
     scene_manager.detect_scenes(frame_source=video_manager)
@@ -58,12 +58,19 @@ def extract_frames(video_path, start_time, end_time):
     return frames
 
 def analyze_scenes(video_path, scenes, description):
-    highest_prob = 0.0
+    highest_prob = float('-inf')
     best_scene = None
 
+    negative_descriptions = [
+        "black screen",
+        "Intro text for a video",
+        "dark scene without much contrast"
+    ]
+
     # Tokenize and encode the description text
-    text_inputs = processor(text=[description], return_tensors="pt", padding=True).to(device)
+    text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
+    positive_feature, negative_features = text_features[0], text_features[1:]
 
     for scene_num, (start_time, end_time) in enumerate(scenes):
         frames = extract_frames(video_path, start_time, end_time)
@@ -77,8 +84,9 @@ def analyze_scenes(video_path, scenes, description):
             image_input = processor(images=image, return_tensors="pt").to(device)
             with torch.no_grad():
                 image_features = model.get_image_features(**image_input).detach()
-                logits = torch.cosine_similarity(image_features, text_features).squeeze().item()
-                scene_prob += logits
+                positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
+                negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
+                scene_prob += positive_similarity - negative_similarities
 
         scene_prob /= len(frames)
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}")
