@@ -37,7 +37,7 @@ class CustomTheme(Base):
         )
         super().set(
             body_background_fill="radial-gradient(#eb5726 1px, transparent 1px)",
-            body_background_size="10px 10px",
+            #body_background_size="10px 10px",
             body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#eb5726",
