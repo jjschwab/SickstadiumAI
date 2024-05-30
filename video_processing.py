@@ -61,7 +61,7 @@ def analyze_scenes(video_path, scenes, description):
     best_scene = None
 
     # Tokenize and encode the description text
-    text_inputs = processor(text=description, return_tensors="pt").to(device)
+    text_inputs = processor(text=[description], return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
 
     for scene_num, (start_time, end_time) in enumerate(scenes):
@@ -78,7 +78,7 @@ def analyze_scenes(video_path, scenes, description):
                 image_features = model.get_image_features(**image_input).detach()
                 logits = (image_features @ text_features.T).squeeze()
                 probs = logits.softmax(dim=0)
-                scene_prob += max(probs).item()
+                scene_prob += probs.max().item()
 
         scene_prob /= len(frames)
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}")
