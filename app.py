@@ -36,7 +36,8 @@ class CustomTheme(Base):
             font_mono=font_mono,
         )
         super().set(
-            body_background_fill="#ffffff",
+            body_background_fill="radial-gradient(#eb5726 1px, transparent 1px)",
+            body_background_size="10px 10px",
             body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#eb5726",
@@ -62,11 +63,6 @@ css = """
     color: #282828;
     border: 2px solid #eb5726;
 }
-body {
-    background-color: #ffffff;
-    background-image: radial-gradient(#eb5726 1px, transparent 1px);
-    background-size: 10px 10px;
-}
 #description {
     background-color: #ffffff;
     color: #282828;
@@ -83,8 +79,8 @@ label[for="video_url"] {
 label[for="description"] {
     color: #eb5726 !important;
 }
-h3{
-    color: #eb5726
+h3 {
+    color: #eb5726;
 }
 .centered-markdown {
     text-align: center;
