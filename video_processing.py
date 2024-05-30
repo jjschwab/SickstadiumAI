@@ -63,7 +63,10 @@ def analyze_scenes(video_path, scenes, description):
     negative_descriptions = [
         "black screen",
         "Intro text for a video",
-        "dark scene without much contrast"
+        "dark scene without much contrast",
+        "No people are in this scene",
+        "A still shot of natural scenery",
+        "Still-camera shot of a person's face"
     ]
 
     # Tokenize and encode the description text
