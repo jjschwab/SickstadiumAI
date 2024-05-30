@@ -36,7 +36,8 @@ class CustomTheme(Base):
             font_mono=font_mono,
         )
         super().set(
-            body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 1) 0%, rgba(235, 87, 38, 0) 70%), radial-gradient(#eb5726 1px, transparent 1px), #ffffff",
+            body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 1) 0%, rgba(235, 87, 38, 0) 70%), #ffffff",
+            body_background_size="100% 100%",
             body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#eb5726",
@@ -59,9 +60,11 @@ def display_results(video_url, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(#eb5726 1px, transparent 1px);
-    background-size: 10px 10px, 100% 100%;
-    background-repeat: repeat;
+    background-image:
+        radial-gradient(#eb5726 1px, transparent 1px),
+        radial-gradient(circle at center, rgba(235, 87, 38, 1) 0%, rgba(235, 87, 38, 0) 70%);
+    background-size: 10px 10px, cover;
+    background-repeat: repeat, no-repeat;
     background-attachment: fixed;
 }
 #video_url {
