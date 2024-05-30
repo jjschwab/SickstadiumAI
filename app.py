@@ -4,7 +4,7 @@ from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
 
-class SimpleTheme(Base):
+class CustomTheme(Base):
     def __init__(
         self,
         *,
@@ -36,8 +36,8 @@ class SimpleTheme(Base):
             font_mono=font_mono,
         )
         super().set(
-            body_background_fill="#282828",
-            body_text_color="#ffffff",
+            body_background_fill="#ffffff",
+            body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#282828",
             block_label_text_color="#eb5726",
@@ -47,7 +47,7 @@ class SimpleTheme(Base):
             button_primary_text_color_hover="#eb5726",
         )
 
-simple_theme = SimpleTheme()
+custom_theme = CustomTheme()
 
 def display_results(video_url, description):
     final_clip_path = process_video(video_url, description)
@@ -55,7 +55,26 @@ def display_results(video_url, description):
         return final_clip_path, final_clip_path
     return "No matching scene found", None
 
-with gr.Blocks(theme=simple_theme) as demo:
+# Custom CSS for additional styling
+css = """
+#video_url {
+    background-color: #eb5726;
+    color: #ffffff;
+    border: 2px solid #eb5726;
+}
+#description {
+    background-color: #ffffff;
+    color: #282828;
+    border: 2px solid #eb5726;
+}
+#submit_button {
+    background-color: #eb5726;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+}
+"""
+
+with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
         gr.Markdown("# Sickstadium AI", elem_classes="centered-markdown")
         gr.Markdown("### This is a brief description for the webpage.", elem_classes="centered-markdown")
