@@ -55,31 +55,17 @@ def display_results(video_url, description):
         return final_clip_path, final_clip_path
     return "No matching scene found", None
 
-# Custom CSS for additional styling
-css = """
-#video_url {
-    background-color: #eb5726;
-    color: #ffffff;
-    border: 2px solid #eb5726;
-}
-#description {
-    background-color: #ffffff;
-    color: #282828;
-    border: 2px solid #eb5726;
-}
-#submit_button {
-    background-color: #eb5726;
-    color: #ffffff;
-    border: 2px solid #ffffff;
-}
-"""
-
-with gr.Blocks(theme=custom_theme, css=css) as demo:
+with gr.Blocks(theme=custom_theme) as demo:
     with gr.Column():
         gr.Markdown("# Sickstadium AI", elem_classes="centered-markdown")
         gr.Markdown("### This is a brief description for the webpage.", elem_classes="centered-markdown")
-        video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
-        description = gr.Textbox(label="Description of desired clip", elem_id="description")
+        
+        gr.Markdown("### <span style='color:#ffffff'>Video URL or Filepath</span>", elem_classes="centered-markdown")
+        video_url = gr.Textbox(label="", elem_id="video_url")
+        
+        gr.Markdown("### <span style='color:#eb5726'>Description of desired clip</span>", elem_classes="centered-markdown")
+        description = gr.Textbox(label="", elem_id="description")
+        
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
         download_output = gr.File(label="Download Processed Video", elem_id="download_output")
