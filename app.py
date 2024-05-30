@@ -36,7 +36,8 @@ class CustomTheme(Base):
             font_mono=font_mono,
         )
         super().set(
-            body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 10%, rgba(235, 87, 38, 0.8) 20%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 40%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 60%, rgba(235, 87, 38, 0.3) 70%, rgba(235, 87, 38, 0.2) 80%, rgba(235, 87, 38, 0.1) 90%, rgba(255, 255, 255, 0) 100%), #ffffff",
+            body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 10%, rgba(235, 87, 38, 0.8) 20%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 40%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 60%, rgba(235, 87, 38, 0.3) 70%, rgba(235, 87, 38, 0.2) 80%, rgba(235, 87, 38, 0.1) 90%, rgba(255, 255, 255, 0) 100%), radial-gradient(#eb5726 1px, transparent 1px)",
+            body_background_size="10px 10px, 100% 100%",
             body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#eb5726",
@@ -59,7 +60,8 @@ def display_results(video_url, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 10%, rgba(235, 87, 38, 0.8) 20%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 40%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 60%, rgba(235, 87, 38, 0.3) 70%, rgba(235, 87, 38, 0.2) 80%, rgba(235, 87, 38, 0.1) 90%, rgba(255, 255, 255, 0) 100%);
+    background-image: radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 10%, rgba(235, 87, 38, 0.8) 20%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 40%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 60%, rgba(235, 87, 38, 0.3) 70%, rgba(235, 87, 38, 0.2) 80%, rgba(235, 87, 38, 0.1) 90%, rgba(255, 255, 255, 0) 100%), radial-gradient(#eb5726 1px, transparent 1px);
+    background-size: 10px 10px, 100% 100%;
 }
 #video_url {
     background-color: #ffffff;
@@ -101,8 +103,8 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
         gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
         gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
         gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your experience in video editing. Upload your video, explain the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at Strongholdlabs.io**", elem_classes="centered-markdown")
-        video_url = gr.Textbox(label="Video URL:", elem_id="video_url")
-        description = gr.Textbox(label="Describe your clip:", elem_id="description")
+        video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
+        description = gr.Textbox(label="Description of desired clip", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
         download_output = gr.File(label="Download Processed Video", elem_id="download_output")
