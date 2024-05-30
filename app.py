@@ -22,7 +22,7 @@ h2 {
     color: #eb5726;
 }
 h3 {
-    color: #ffffff;
+    color: #eb5726;
 } 
 h4 {
     color: #eb5726;
