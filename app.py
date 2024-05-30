@@ -37,6 +37,7 @@ class CustomTheme(Base):
         )
         super().set(
             body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 1) 0%, rgba(235, 87, 38, 0) 70%), #ffffff",
+            body_background_size="100% 100%",
             body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#eb5726",
@@ -103,9 +104,9 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
         gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
         gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
-        gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your experience in video editing. Upload your video, explain the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at Strongholdlabs.io**", elem_classes="centered-markdown")
-        video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
-        description = gr.Textbox(label="Description of desired clip", elem_id="description")
+        gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your experience in video editing. Upload your video, explain the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at [Strongholdlabs.io](https://strongholdlabs.io/)**", elem_classes="centered-markdown")
+        video_url = gr.Textbox(label="Video URL:", elem_id="video_url")
+        description = gr.Textbox(label="Describe your clip:", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
         download_output = gr.File(label="Download Processed Video", elem_id="download_output")
