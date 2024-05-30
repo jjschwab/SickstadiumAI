@@ -36,7 +36,7 @@ class CustomTheme(Base):
             font_mono=font_mono,
         )
         super().set(
-            body_background_fill="radial-gradient(#eb5726 1px, transparent 1px)",
+            body_background_fill="radial-gradient(circle at center, rgba(235, 87, 38, 0.3), rgba(235, 87, 38, 0.3) 20%, rgba(255, 255, 255, 0) 21%), radial-gradient(circle at center, rgba(235, 87, 38, 0.2), rgba(235, 87, 38, 0.2) 40%, rgba(255, 255, 255, 0) 41%), radial-gradient(circle at center, rgba(235, 87, 38, 0.1), rgba(235, 87, 38, 0.1) 60%, rgba(255, 255, 255, 0) 61%), radial-gradient(circle at center, rgba(235, 87, 38, 0.05), rgba(235, 87, 38, 0.05) 80%, rgba(255, 255, 255, 0) 81%), #ffffff",
             body_text_color="#282828",
             block_background_fill="#ffffff",
             block_title_text_color="#eb5726",
@@ -59,8 +59,7 @@ def display_results(video_url, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(#eb5726 1px, transparent 1px);
-    background-size: 10px 10px;
+    background-image: radial-gradient(circle at center, rgba(235, 87, 38, 0.3), rgba(235, 87, 38, 0.3) 20%, rgba(255, 255, 255, 0) 21%), radial-gradient(circle at center, rgba(235, 87, 38, 0.2), rgba(235, 87, 38, 0.2) 40%, rgba(255, 255, 255, 0) 41%), radial-gradient(circle at center, rgba(235, 87, 38, 0.1), rgba(235, 87, 38, 0.1) 60%, rgba(255, 255, 255, 0) 61%), radial-gradient(circle at center, rgba(235, 87, 38, 0.05), rgba(235, 87, 38, 0.05) 80%, rgba(255, 255, 255, 0) 81%);
 }
 #video_url {
     background-color: #ffffff;
@@ -100,7 +99,7 @@ h3 {
 with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
         gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
-        gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
+        gr.Markdown("### **Upload your videos. Find sick clips. Tell your truth.**", elem_classes="centered-markdown")
         gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your experience in video editing. Upload your video, explain the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at Strongholdlabs.io**", elem_classes="centered-markdown")
         video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
         description = gr.Textbox(label="Description of desired clip", elem_id="description")
