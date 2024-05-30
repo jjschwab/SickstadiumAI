@@ -41,17 +41,15 @@ h6 {
 #video_url + label {
     color: #ffffff;
 }
-#description {
+#description + label {
     background-color: #ecf0f1;
     color: #eb5726;
     border: 2px solid #eb5726;
 }
-#description + label {
-    color: #eb5726;
-}
+
 #submit_button {
     background-color: #ffffff;
-    color: #F06230;
+    color: #ffffff;
     border: 2px solid #eb5726;
 }
 #submit_button:hover {
