@@ -58,6 +58,11 @@ def display_results(video_url, description):
 
 # Custom CSS for additional styling
 css = """
+body {
+    background-color: #ffffff;
+    background-image: radial-gradient(#eb5726 1px, transparent 1px);
+    background-size: 10px 10px;
+}
 #video_url {
     background-color: #ffffff;
     color: #282828;
@@ -91,6 +96,8 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
         gr.Markdown("# Sickstadium AI", elem_classes="centered-markdown")
         gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
+        gr.Markdown("Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software.", elem_classes="centered-markdown")
+        gr.Markdown("Skip the timeline, and don't worry about your experience in video editing. Upload your video, explain the clip you want, and let our AI do the dirty work.", elem_classes="centered-markdown")
         video_url = gr.Textbox(label="Video URL or Filepath", elem_id="video_url")
         description = gr.Textbox(label="Description of desired clip", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
