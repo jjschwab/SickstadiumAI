@@ -38,10 +38,16 @@ h6 {
     color: #ffffff;
     border: 2px solid #ecf0f1;
 }
+#video_url + label {
+    color: #ffffff;
+}
 #description {
     background-color: #ecf0f1;
     color: #eb5726;
     border: 2px solid #eb5726;
+}
+#description + label {
+    color: #eb5726;
 }
 #submit_button {
     background-color: #ffffff;
@@ -62,7 +68,7 @@ h6 {
     width: 100%;
 }
 .textbox-label {
-    color: #ffffff;
+    color: #eb5726;
 }
 #description ~ label {
     color: #eb5726;
