@@ -1,3 +1,4 @@
+from typing import Iterable
 import gradio as gr
 from video_processing import process_video
 from gradio.themes.base import Base
@@ -13,16 +14,12 @@ class CustomTheme(Base):
         spacing_size: sizes.Size | str = sizes.spacing_md,
         radius_size: sizes.Size | str = sizes.radius_md,
         text_size: sizes.Size | str = sizes.text_lg,
-        font: fonts.Font
-        | str
-        | Iterable[fonts.Font | str] = (
+        font: fonts.Font | str | Iterable[fonts.Font | str] = (
             fonts.GoogleFont("Quicksand"),
             "ui-sans-serif",
             "sans-serif",
         ),
-        font_mono: fonts.Font
-        | str
-        | Iterable[fonts.Font | str] = (
+        font_mono: fonts.Font | str | Iterable[fonts.Font | str] = (
             fonts.GoogleFont("IBM Plex Mono"),
             "ui-monospace",
             "monospace",
@@ -80,4 +77,3 @@ with gr.Blocks(theme=custom_theme) as demo:
         submit_button.click(fn=display_results, inputs=[video_url, description], outputs=[video_output, download_output])
 
 demo.launch()
-
