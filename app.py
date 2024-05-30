@@ -62,6 +62,11 @@ css = """
     color: #282828;
     border: 2px solid #eb5726;
 }
+body {
+    background-color: #ffffff;
+    background-image: radial-gradient(#eb5726 1px, transparent 1px);
+    background-size: 10px 10px;
+}
 #description {
     background-color: #ffffff;
     color: #282828;
