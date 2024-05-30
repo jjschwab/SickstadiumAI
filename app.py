@@ -37,9 +37,7 @@ h6 {
     background-color: #eb5726;
     color: #ffffff;
     border: 2px solid #ecf0f1;
-}
-#video_url + label {
-    color: #ffffff;
+    label: #ffffff
 }
 #description + label {
     background-color: #ecf0f1;
@@ -49,7 +47,7 @@ h6 {
 
 #submit_button {
     background-color: #ffffff;
-    color: #ffffff;
+    color: #eb5726;
     border: 2px solid #eb5726;
 }
 #submit_button:hover {
