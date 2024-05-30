@@ -59,7 +59,7 @@ def display_results(video_url, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 10%, rgba(235, 87, 38, 0.8) 20%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 40%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 60%, rgba(235, 87, 38, 0.3) 70%, rgba(235, 87, 38, 0.2) 80%, rgba(235, 87, 38, 0.1) 90%, rgba(255, 255, 255, 0) 100%), radial-gradient(#eb5726 1px, transparent 1px);
+    background-image: radial-gradient(circle at center, rgba(235, 87, 38, 1), rgba(235, 87, 38, 0.9) 10%, rgba(235, 87, 38, 0.8) 20%, rgba(235, 87, 38, 0.7) 30%, rgba(235, 87, 38, 0.6) 40%, rgba(235, 87, 38, 0.5) 50%, rgba(235, 87, 38, 0.4) 60%, rgba(235, 87, 38, 0.3) 70%, rgba(235, 87, 38, 0.2) 80%, rgba(235, 87, 38, 0.1) 90%, rgba(255, 255, 255, 0) 100%), radial-gradient(#eb5726 1px);
     background-size: 10px 10px, 100% 100%;
 }
 #video_url {
