@@ -33,7 +33,7 @@ def sanitize_filename(filename):
 def find_scenes(video_path):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector(threshold=30))
+    scene_manager.add_detector(ContentDetector(threshold=30))  # Adjusted threshold for finer segmentation
     video_manager.set_downscale_factor()
     video_manager.start()
     scene_manager.detect_scenes(frame_source=video_manager)
@@ -51,7 +51,8 @@ def extract_frames(video_path, start_time, end_time):
     start_seconds = convert_timestamp_to_seconds(start_time)
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
-    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 2)):
+    # Extract more frames: every frame in the scene
+    for frame_time in range(0, int(video_clip.duration * video_clip.fps)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
     return frames
@@ -76,9 +77,8 @@ def analyze_scenes(video_path, scenes, description):
             image_input = processor(images=image, return_tensors="pt").to(device)
             with torch.no_grad():
                 image_features = model.get_image_features(**image_input).detach()
-                logits = (image_features @ text_features.T).squeeze()
-                probs = logits.softmax(dim=0)
-                scene_prob += probs.max().item()
+                logits = torch.cosine_similarity(image_features, text_features).squeeze().item()
+                scene_prob += logits
 
         scene_prob /= len(frames)
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}")
