@@ -54,22 +54,17 @@ def save_uploaded_file(uploaded_file):
     if uploaded_file is None:
         return None  # Handle cases where no file was uploaded
 
-    # Check if the received object has the expected 'file' and 'name' attributes
-    if hasattr(uploaded_file, 'name') and hasattr(uploaded_file, 'file'):
-        print(f"File name: {uploaded_file.name}")  # Debug: Print file name
-        upload_dir = "uploaded_videos"
-        os.makedirs(upload_dir, exist_ok=True)
-        file_path = os.path.join(upload_dir, uploaded_file.name)
+    print(f"File name: {uploaded_file.name}")  # Debug: Print file name
+    upload_dir = "uploaded_videos"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, uploaded_file.name)
 
-        with open(file_path, "wb") as f:
-            # Attempt to read from the file object if possible
-            file_content = uploaded_file.file.read()
-            f.write(file_content)  # Save file content to disk
-        return file_path
-    else:
-        # If expected attributes are not found, print available attributes
-        print(f"Available attributes: {dir(uploaded_file)}")  # Debug: List attributes
-        return None
+    # Since the file is received as a string, write it directly
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.encode('utf-8'))  # Encode to bytes and write if necessary
+
+    return file_path
+
 
 def display_results(video_url, video_file, description):
     """Process video from URL or file upload and return the results."""
