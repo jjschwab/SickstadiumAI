@@ -33,7 +33,7 @@ def sanitize_filename(filename):
 def find_scenes(video_path):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector(threshold=20))  # Adjusted threshold for finer segmentation
+    scene_manager.add_detector(ContentDetector(threshold=33))  # Adjusted threshold for finer segmentation
     video_manager.set_downscale_factor()
     video_manager.start()
     scene_manager.detect_scenes(frame_source=video_manager)
