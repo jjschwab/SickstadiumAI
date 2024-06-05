@@ -145,7 +145,7 @@ def cleanup_temp_files():
         for file in os.listdir(temp_dir):
             file_path = os.path.join(temp_dir, file)
             try:
-                if os.path.isfile(file_path)):
+                if os.path.isfile(file_path):
                     os.unlink(file_path)
             except Exception as e:
                 print(f"Error: {e}")
