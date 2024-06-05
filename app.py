@@ -49,27 +49,39 @@ class CustomTheme(Base):
 
 custom_theme = CustomTheme()
 
-def save_uploaded_file(file):
+def save_uploaded_file(uploaded_file):
+    """Save the uploaded file to disk."""
+    if uploaded_file is None:
+        return None  # No file was uploaded
+
+    # Gradio uploads come with a .name attribute and file content is accessible via .read()
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, file.name)
+    file_path = os.path.join(upload_dir, uploaded_file.name)
+
+    # Save the temporary file to a new location
     with open(file_path, "wb") as f:
-        # Use .read() to read the file content from the TemporaryUploadedFile
-        f.write(file.file.read())  
+        f.write(uploaded_file.read())  # Read bytes from the uploaded file
+
     return file_path
 
 def display_results(video_url, video_file, description):
+    """Process video from URL or file upload and return the results."""
+    final_clip_path = None
+
     if video_url:
         final_clip_path = process_video(video_url, description, is_url=True)
     elif video_file:
         video_file_path = save_uploaded_file(video_file)
-        final_clip_path = process_video(video_file_path, description, is_url=False)
-    else:
-        return "No video provided", None
+        if video_file_path:
+            final_clip_path = process_video(video_file_path, description, is_url=False)
+        else:
+            return "No file provided or file save error", None
 
     if final_clip_path:
         return final_clip_path, final_clip_path
-    return "No matching scene found", None
+    else:
+        return "No matching scene found", None
 
 # Custom CSS for additional styling
 css = """
@@ -129,7 +141,6 @@ with gr.Blocks() as demo:
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
         download_output = gr.File(label="Download Processed Video")
-
         submit_button.click(
             fn=display_results,
             inputs=[video_url, video_file, description],
