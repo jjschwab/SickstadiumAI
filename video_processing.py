@@ -124,7 +124,7 @@ def process_video(video_input, description, is_url=True):
     if is_url:
         video_path = download_video(video_input)
     else:
-        video_path = sanitize_filename(video_input)
+        video_path = video_input  # Use the uploaded file path directly
 
     scenes = find_scenes(video_path)
     best_scene = analyze_scenes(video_path, scenes, description)
@@ -145,7 +145,7 @@ def cleanup_temp_files():
         for file in os.listdir(temp_dir):
             file_path = os.path.join(temp_dir, file)
             try:
-                if os.path.isfile(file_path):
+                if os.path.isfile(file_path)):
                     os.unlink(file_path)
             except Exception as e:
                 print(f"Error: {e}")
