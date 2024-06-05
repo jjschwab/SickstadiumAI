@@ -47,8 +47,14 @@ class CustomTheme(Base):
 
 custom_theme = CustomTheme()
 
-def display_results(video_url, description):
-    final_clip_path = process_video(video_url, description)
+def display_results(video_url, video_file, description):
+    if video_url:
+        final_clip_path = process_video(video_url, description, is_url=True)
+    elif video_file:
+        final_clip_path = process_video(video_file.name, description, is_url=False)
+    else:
+        return "No video provided", None
+
     if final_clip_path:
         return final_clip_path, final_clip_path
     return "No matching scene found", None
@@ -109,10 +115,11 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
         gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
         gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your video editing skills. Upload your video, describe the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at [Strongholdlabs.io](https://strongholdlabs.io/)**", elem_classes="centered-markdown")
         video_url = gr.Textbox(label="Video URL:", elem_id="video_url")
+        video_file = gr.File(label="Upload Video File:", elem_id="video_file")
         description = gr.Textbox(label="Describe your clip:", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
         download_output = gr.File(label="Download Processed Video", elem_id="download_output")
-        submit_button.click(fn=display_results, inputs=[video_url, description], outputs=[video_output, download_output])
+        submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output])
 
 demo.launch()
