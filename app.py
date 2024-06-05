@@ -50,20 +50,22 @@ class CustomTheme(Base):
 custom_theme = CustomTheme()
 
 def save_uploaded_file(uploaded_file):
-    print(f"Received object type: {type(uploaded_file)}")  # Debug: Check the object type
     if uploaded_file is None:
         return None  # Handle cases where no file was uploaded
-
-    print(f"File name: {uploaded_file.name}")  # Debug: Print file name
+    
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, uploaded_file.name)
 
-    # Since the file is received as a string, write it directly
+    # Save the temporary file to a new location
     with open(file_path, "wb") as f:
-        f.write(uploaded_file.encode('utf-8'))  # Encode to bytes and write if necessary
+        f.write(uploaded_file.file.read())  # Write file content to disk
+        f.flush()
+        os.fsync(f.fileno())  # Ensure all file data is flushed to disk
 
+    print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")  # Debugging
     return file_path
+
 
 
 def display_results(video_url, video_file, description):
