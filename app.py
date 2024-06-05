@@ -54,7 +54,7 @@ def save_uploaded_file(file):
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, file.name)
     with open(file_path, "wb") as f:
-        f.write(file.file.read())  # Convert to bytes and write
+        f.write(file.read())  # Write the content directly
     return file_path
 
 def display_results(video_url, video_file, description):
