@@ -54,8 +54,9 @@ def save_uploaded_file(file):
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, file.name)
     with open(file_path, "wb") as f:
-        f.write(file.encode('utf-8'))  # Convert to bytes and write
+        shutil.copyfileobj(file, f)
     return file_path
+
 
 def display_results(video_url, video_file, description):
     if video_url:
