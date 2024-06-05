@@ -53,7 +53,7 @@ def save_uploaded_file(file):
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, file.name)
     with open(file_path, "wb") as f:
-        f.write(file.read())
+        f.write(file)
     return file_path
 
 def display_results(video_url, video_file, description):
