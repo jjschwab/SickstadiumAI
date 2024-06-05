@@ -52,44 +52,37 @@ custom_theme = CustomTheme()
 def save_uploaded_file(uploaded_file):
     if uploaded_file is None:
         return None  # Handle cases where no file was uploaded
+    
+    filename, filedata = uploaded_file  # Unpack the tuple into filename and binary data
+    upload_dir = "uploaded_videos"
+    os.makedirs(upload_dir, exist_ok=True)  # Ensure the directory exists
+    file_path = os.path.join(upload_dir, filename)
 
-    print(f"Received object type: {type(uploaded_file)}")  # Debug: Check the object type
-    print(f"Uploaded file content: {uploaded_file}")  # Debug: Inspect the content
+    # Write the binary data to a new file in the specified directory
+    with open(file_path, "wb") as f:
+        f.write(filedata)
+        f.flush()
+        os.fsync(f.fileno())  # Ensure all file data is flushed to disk
 
-    # Handling file content based on its type
-    if isinstance(uploaded_file, tuple):
-        # If it's a tuple, it usually contains (filename, filedata)
-        filename, filedata = uploaded_file
-        file_path = os.path.join("uploaded_videos", filename)
-        with open(file_path, "wb") as f:
-            f.write(filedata)
-    elif isinstance(uploaded_file, str):
-        # If it's a string, assuming it's a file path
-        file_path = uploaded_file
-    else:
-        raise ValueError("Unexpected file input type")
-
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
     print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")
     return file_path
 
-
+# Define a function to process the video and display results
 def display_results(video_url, video_file, description):
-    final_clip_path = None
-
     if video_url:
+        # Process video from URL
         final_clip_path = process_video(video_url, description, is_url=True)
     elif video_file:
+        # Save and process video from file upload
         video_file_path = save_uploaded_file(video_file)
         if video_file_path:
             final_clip_path = process_video(video_file_path, description, is_url=False)
         else:
             return "No file provided or file save error", None
-
-    if final_clip_path:
-        return final_clip_path, final_clip_path
     else:
-        return "No matching scene found", None
+        return "No input provided", None
+
+    return final_clip_path, gr.Video.update(value=final_clip_path)
 
 css = """
 body {
@@ -148,6 +141,7 @@ with gr.Blocks() as demo:
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
         download_output = gr.File(label="Download Processed Video")
+
         submit_button.click(
             fn=display_results,
             inputs=[video_url, video_file, description],
