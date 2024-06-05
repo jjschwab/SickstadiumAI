@@ -5,6 +5,7 @@ from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
 
+
 class CustomTheme(Base):
     def __init__(
         self,
@@ -86,6 +87,55 @@ def display_results(video_url, video_file, description):
         return final_clip_path, final_clip_path
     else:
         return "No matching scene found", None
+
+css = """
+body {
+    background-color: #ffffff;
+    background-image: radial-gradient(#eb5726 1px, transparent 1px);
+    background-size: 10px 10px;
+    background-repeat: repeat;
+    background-attachment: fixed;
+}
+#video_url {
+    background-color: #ffffff;
+    color: #282828;
+    border: 2px solid #eb5726;
+}
+#description {
+    background-color: #ffffff;
+    color: #282828;
+    border: 2px solid #eb5726;
+}
+#submit_button {
+    background-color: #eb5726;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+}
+#submit_button:hover {
+    background-color: #f5986e;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+}
+label[for="video_url"] {
+    color: #eb5726 !important;
+}
+label[for="description"] {
+    color: #eb5726 !important;
+}
+h3 {
+    color: #eb5726;
+}
+.centered-markdown {
+    text-align: center;
+    background-color: #ffffff;
+    padding: 10px;
+}
+#sickstadium-title {
+    font-size: 3em !important;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+"""
 
 with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
