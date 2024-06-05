@@ -146,12 +146,18 @@ def interface_function(video_file):
 def test_upload(video_file):
     if video_file is not None:
         return f"Received file with {len(video_file)} bytes"
-    return "No file uploaded."
+    else:
+        return "No file uploaded."
 
 with gr.Blocks() as demo:
     with gr.Column():
         video_file = gr.UploadButton("Upload Video File", type="binary", file_types=["video"])
         output = gr.Textbox()
-        video_file.change(test_upload, inputs=[video_file], outputs=[output])
+        submit_button = gr.Button("Process Video")
+        submit_button.click(
+            fn=test_upload, 
+            inputs=[video_file], 
+            outputs=[output]
+        )
 
 demo.launch()
