@@ -120,8 +120,12 @@ def extract_best_scene(video_path, scene):
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     return video_clip
 
-def process_video(video_url, description):
-    video_path = download_video(video_url)
+def process_video(video_input, description, is_url=True):
+    if is_url:
+        video_path = download_video(video_input)
+    else:
+        video_path = sanitize_filename(video_input)
+
     scenes = find_scenes(video_path)
     best_scene = analyze_scenes(video_path, scenes, description)
     final_clip = extract_best_scene(video_path, best_scene)
@@ -145,4 +149,3 @@ def cleanup_temp_files():
                     os.unlink(file_path)
             except Exception as e:
                 print(f"Error: {e}")
-
