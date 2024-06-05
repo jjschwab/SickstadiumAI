@@ -44,17 +44,34 @@ def ensure_video_format(video_path):
         return None
 
 def find_scenes(video_path):
-    formatted_video_path = ensure_video_format(video_path)
-    if formatted_video_path is None:
-        print("Video formatting failed. Exiting scene detection.")
+    print(f"Processing video for scene detection: {video_path}")
+    video_path = ensure_video_format(video_path)
+    print(f"Video formatted at path: {video_path}")
+    
+    try:
+        video_manager = open_video(video_path)
+    except Exception as e:
+        print(f"Failed to open video: {e}")
         return []
-    video_manager = open_video(formatted_video_path)
+
     scene_manager = SceneManager()
     scene_manager.add_detector(ContentDetector(threshold=30.0))
-    scene_manager.detect_scenes(video_manager)
+    
+    try:
+        scene_manager.detect_scenes(video_manager)
+    except Exception as e:
+        print(f"Error during scene detection: {e}")
+        return []
+
     scene_list = scene_manager.get_scene_list()
+    if not scene_list:
+        print("No scenes detected.")
+        return []
+
     scenes = [(scene[0].get_seconds(), scene[1].get_seconds()) for scene in scene_list]
+    print(f"Detected scenes: {scenes}")
     return scenes
+
 
 
 def convert_timestamp_to_seconds(timestamp):
