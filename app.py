@@ -51,19 +51,20 @@ custom_theme = CustomTheme()
 
 def save_uploaded_file(uploaded_file):
     if uploaded_file is None:
+        print("No file uploaded.")
         return None  # Handle cases where no file was uploaded
-
-    filedata = uploaded_file  # When using 'binary', the filedata will be directly accessible
+    
+    print("File received:", type(uploaded_file), len(uploaded_file))
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, "uploaded_video.mp4")  # Using a fixed name for simplicity
+    file_path = os.path.join(upload_dir, "uploaded_video.mp4")
 
     with open(file_path, "wb") as f:
-        f.write(filedata)
+        f.write(uploaded_file)  # Write file content to disk
         f.flush()
         os.fsync(f.fileno())  # Ensure all file data is flushed to disk
 
-    print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")
+    print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")  # Debugging
     return file_path
 
 def display_results(video_url, video_file, description):
@@ -136,18 +137,21 @@ h3 {
 }
 """
 
+def interface_function(video_file):
+    if video_file is not None:
+        file_path = save_uploaded_file(video_file)
+        return f"File saved at {file_path}"
+    return "No file uploaded."
+
 with gr.Blocks() as demo:
     with gr.Column():
-        video_url = gr.Textbox(label="Video URL")
         video_file = gr.UploadButton(label="Upload Video File", type="binary", file_types=["video"])
-        description = gr.Textbox(label="Describe your clip")
         submit_button = gr.Button("Process Video")
-        video_output = gr.Text(label="Processed Video")
-        download_output = gr.Text(label="Download Link")
+        output_text = gr.Text(label="Output")
         submit_button.click(
-            fn=display_results,
-            inputs=[video_url, video_file, description],
-            outputs=[video_output, download_output]
+            fn=interface_function,
+            inputs=[video_file],
+            outputs=[output_text]
         )
 
 demo.launch()
