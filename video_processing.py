@@ -1,6 +1,6 @@
 import os
 import cv2
-from scenedetect import VideoManager, SceneManager
+from scenedetect import SceneManager, open_video, split_video_ffmpeg
 from scenedetect.detectors import ContentDetector
 from moviepy.editor import VideoFileClip
 from transformers import CLIPProcessor, CLIPModel
@@ -31,27 +31,20 @@ def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
 def find_scenes(video_path):
-    video_manager = VideoManager([video_path])
+    video_manager = open_video(video_path)
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector(threshold=33))  # Adjusted threshold for finer segmentation
-    video_manager.set_downscale_factor()
-    video_manager.start()
-    scene_manager.detect_scenes(frame_source=video_manager)
+    scene_manager.add_detector(ContentDetector(threshold=30.0))
+    scene_manager.detect_scenes(video_manager)
     scene_list = scene_manager.get_scene_list()
-    video_manager.release()
-    scenes = [(start.get_timecode(), end.get_timecode()) for start, end in scene_list]
+    scenes = [(scene[0].get_seconds(), scene[1].get_seconds()) for scene in scene_list]
     return scenes
 
 def convert_timestamp_to_seconds(timestamp):
-    h, m, s = map(float, timestamp.split(':'))
-    return int(h) * 3600 + int(m) * 60 + s
+    return float(timestamp)
 
 def extract_frames(video_path, start_time, end_time):
     frames = []
-    start_seconds = convert_timestamp_to_seconds(start_time)
-    end_seconds = convert_timestamp_to_seconds(end_time)
-    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
-    # Extract more frames: every frame in the scene
+    video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
     for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 5)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
@@ -69,7 +62,6 @@ def analyze_scenes(video_path, scenes, description):
         "Still-camera shot of a person's face"
     ]
 
-    # Tokenize and encode the description text
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
@@ -91,16 +83,13 @@ def analyze_scenes(video_path, scenes, description):
                 scene_prob += positive_similarity - negative_similarities
 
         scene_prob /= len(frames)
-        scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
+        scene_duration = end_time - start_time
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}")
 
         scene_scores.append((scene_prob, start_time, end_time, scene_duration))
 
-    # Sort scenes by probability in descending order and select the top 5
     scene_scores.sort(reverse=True, key=lambda x: x[0])
     top_scenes = scene_scores[:5]
-
-    # Find the longest scene among the top 5
     longest_scene = max(top_scenes, key=lambda x: x[3])
 
     if longest_scene:
@@ -115,16 +104,14 @@ def extract_best_scene(video_path, scene):
         return None
 
     start_time, end_time = scene
-    start_seconds = convert_timestamp_to_seconds(start_time)
-    end_seconds = convert_timestamp_to_seconds(end_time)
-    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
+    video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
     return video_clip
 
 def process_video(video_input, description, is_url=True):
     if is_url:
         video_path = download_video(video_input)
     else:
-        video_path = video_input  # Use the uploaded file path directly
+        video_path = video_input
 
     scenes = find_scenes(video_path)
     best_scene = analyze_scenes(video_path, scenes, description)
