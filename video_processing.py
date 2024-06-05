@@ -8,6 +8,7 @@ import torch
 import yt_dlp
 from PIL import Image
 import uuid
+import subprocess
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
@@ -30,7 +31,14 @@ def download_video(url):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
+def ensure_video_format(video_path):
+    temp_path = f"temp_videos/formatted_{uuid.uuid4()}.mp4"
+    command = ['ffmpeg', '-i', video_path, '-c', 'copy', temp_path]
+    subprocess.run(command, check=True)
+    return temp_path
+
 def find_scenes(video_path):
+    video_path = ensure_video_format(video_path)
     video_manager = open_video(video_path)
     scene_manager = SceneManager()
     scene_manager.add_detector(ContentDetector(threshold=30.0))
