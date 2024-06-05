@@ -143,7 +143,7 @@ h3 {
 with gr.Blocks() as demo:
     with gr.Column():
         video_url = gr.Textbox(label="Video URL")
-        video_file = gr.File(label="Upload Video File", type="file")
+        video_file = gr.File(label="Upload Video File", type="binary")
         description = gr.Textbox(label="Describe your clip")
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
