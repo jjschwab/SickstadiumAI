@@ -68,21 +68,24 @@ def save_uploaded_file(uploaded_file):
 
 def display_results(video_url, video_file, description):
     """Process video from URL or file upload and return the results."""
-    final_clip_path = None
-
+    print("Function called with:", video_url, video_file, description)
     if video_url:
-        final_clip_path = process_video(video_url, description, is_url=True)
+        print("Processing video from URL.")
+        # Simplified for testing: Just simulate processing and return a URL.
+        return "Processed video URL would be here", "Dummy video URL for testing"
     elif video_file:
+        print("Received video file for processing.")
         video_file_path = save_uploaded_file(video_file)
         if video_file_path:
-            final_clip_path = process_video(video_file_path, description, is_url=False)
+            print(f"Video file saved to: {video_file_path}")
+            # Simplified for testing
+            return "Processed video file would be here", "Dummy video file path for testing"
         else:
+            print("No file provided or file save error.")
             return "No file provided or file save error", None
-
-    if final_clip_path:
-        return final_clip_path, final_clip_path  # Returning the path twice, for both video and download components
     else:
-        return "No matching scene found", None
+        print("No valid input received.")
+        return "No input received", None
 
 css = """
 body {
@@ -139,8 +142,8 @@ with gr.Blocks() as demo:
         video_file = gr.UploadButton(label="Upload Video File", type="binary", file_types=["video"])
         description = gr.Textbox(label="Describe your clip")
         submit_button = gr.Button("Process Video")
-        video_output = gr.Video(label="Processed Video")
-        download_output = gr.File(label="Download Processed Video")
+        video_output = gr.Text(label="Processed Video")
+        download_output = gr.Text(label="Download Link")
         submit_button.click(
             fn=display_results,
             inputs=[video_url, video_file, description],
