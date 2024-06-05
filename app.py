@@ -52,13 +52,12 @@ custom_theme = CustomTheme()
 def save_uploaded_file(uploaded_file):
     if uploaded_file is None:
         return None  # Handle cases where no file was uploaded
-    
-    filename, filedata = uploaded_file  # Unpack the tuple into filename and binary data
-    upload_dir = "uploaded_videos"
-    os.makedirs(upload_dir, exist_ok=True)  # Ensure the directory exists
-    file_path = os.path.join(upload_dir, filename)
 
-    # Write the binary data to a new file in the specified directory
+    filedata = uploaded_file  # When using 'bytes', the filedata will be directly accessible
+    upload_dir = "uploaded_videos"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, "uploaded_video.mp4")  # Using a fixed name for simplicity
+
     with open(file_path, "wb") as f:
         f.write(filedata)
         f.flush()
@@ -67,23 +66,18 @@ def save_uploaded_file(uploaded_file):
     print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")
     return file_path
 
-# Define a function to process the video and display results
-def display_results(video_url, video_file, description):
-    if video_url:
-        # Process video from URL
-        final_clip_path = process_video(video_url, description, is_url=True)
-    elif video_file:
-        # Save and process video from file upload
+def display_results(video_file, description):
+    if video_file:
         video_file_path = save_uploaded_file(video_file)
         if video_file_path:
             final_clip_path = process_video(video_file_path, description, is_url=False)
+            return final_clip_path, gr.Video.update(value=final_clip_path)
         else:
-            return "No file provided or file save error", None
+            return "File save error", None
     else:
-        return "No input provided", None
+        return "No file provided", None
 
-    return final_clip_path, gr.Video.update(value=final_clip_path)
-
+        
 css = """
 body {
     background-color: #ffffff;
@@ -135,8 +129,7 @@ h3 {
 
 with gr.Blocks() as demo:
     with gr.Column():
-        video_url = gr.Textbox(label="Video URL")
-        video_file = gr.File(label="Upload Video File", type="binary")
+        upload_button = gr.UploadButton(label="Upload Video File", type="bytes", file_types=["video"])
         description = gr.Textbox(label="Describe your clip")
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
@@ -144,7 +137,7 @@ with gr.Blocks() as demo:
 
         submit_button.click(
             fn=display_results,
-            inputs=[video_url, video_file, description],
+            inputs=[upload_button, description],
             outputs=[video_output, download_output]
         )
 
