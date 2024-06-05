@@ -4,7 +4,6 @@ from video_processing import process_video
 from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
-import os
 
 class CustomTheme(Base):
     def __init__(
@@ -50,26 +49,28 @@ class CustomTheme(Base):
 custom_theme = CustomTheme()
 
 def save_uploaded_file(uploaded_file):
+    print(f"Received object type: {type(uploaded_file)}")
     if uploaded_file is None:
         return None  # Handle cases where no file was uploaded
     
+    if isinstance(uploaded_file, gr.NamedString):
+        print(f"File path from NamedString: {uploaded_file}")
+        return uploaded_file  # Directly return the path if it's a NamedString
+
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, uploaded_file.name)
 
     # Save the temporary file to a new location
     with open(file_path, "wb") as f:
-        f.write(uploaded_file.file.read())  # Write file content to disk
+        f.write(uploaded_file.read())  # Assuming file is a file-like object
         f.flush()
         os.fsync(f.fileno())  # Ensure all file data is flushed to disk
 
-    print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")  # Debugging
+    print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")
     return file_path
 
-
-
 def display_results(video_url, video_file, description):
-    """Process video from URL or file upload and return the results."""
     final_clip_path = None
 
     if video_url:
@@ -86,68 +87,17 @@ def display_results(video_url, video_file, description):
     else:
         return "No matching scene found", None
 
-# Custom CSS for additional styling
-css = """
-body {
-    background-color: #ffffff;
-    background-image: radial-gradient(#eb5726 1px, transparent 1px);
-    background-size: 10px 10px;
-    background-repeat: repeat;
-    background-attachment: fixed;
-}
-#video_url {
-    background-color: #ffffff;
-    color: #282828;
-    border: 2px solid #eb5726;
-}
-#description {
-    background-color: #ffffff;
-    color: #282828;
-    border: 2px solid #eb5726;
-}
-#submit_button {
-    background-color: #eb5726;
-    color: #ffffff;
-    border: 2px solid #ffffff;
-}
-#submit_button:hover {
-    background-color: #f5986e;
-    color: #ffffff;
-    border: 2px solid #ffffff;
-}
-label[for="video_url"] {
-    color: #eb5726 !important;
-}
-label[for="description"] {
-    color: #eb5726 !important;
-}
-h3 {
-    color: #eb5726;
-}
-.centered-markdown {
-    text-align: center;
-    background-color: #ffffff;
-    padding: 10px;
-}
-#sickstadium-title {
-    font-size: 3em !important;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-"""
-
-with gr.Blocks() as demo:
+with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
-        video_url = gr.Textbox(label="Video URL")
-        video_file = gr.File(label="Upload Video File")
-        description = gr.Textbox(label="Describe your clip")
+        gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
+        gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
+        gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your video editing skills. Upload your video, describe the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at [Strongholdlabs.io](https://strongholdlabs.io/)**", elem_classes="centered-markdown")
+        video_url = gr.Textbox(label="Video URL:")
+        video_file = gr.File(label="Upload Video File:")
+        description = gr.Textbox(label="Describe your clip:")
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
         download_output = gr.File(label="Download Processed Video")
-        submit_button.click(
-            fn=display_results,
-            inputs=[video_url, video_file, description],
-            outputs=[video_output, download_output]
-        )
+        submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output])
 
 demo.launch()
