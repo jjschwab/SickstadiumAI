@@ -3,6 +3,7 @@ from video_processing import process_video
 from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
+import os
 
 class CustomTheme(Base):
     def __init__(
