@@ -50,26 +50,29 @@ class CustomTheme(Base):
 custom_theme = CustomTheme()
 
 def save_uploaded_file(uploaded_file):
-    print(f"Received object type: {type(uploaded_file)}")
     if uploaded_file is None:
         return None  # Handle cases where no file was uploaded
-    
-    if isinstance(uploaded_file, gr.NamedString):
-        print(f"File path from NamedString: {uploaded_file}")
-        return uploaded_file  # Directly return the path if it's a NamedString
 
-    upload_dir = "uploaded_videos"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, uploaded_file.name)
+    print(f"Received object type: {type(uploaded_file)}")  # Debug: Check the object type
+    print(f"Uploaded file content: {uploaded_file}")  # Debug: Inspect the content
 
-    # Save the temporary file to a new location
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.read())  # Assuming file is a file-like object
-        f.flush()
-        os.fsync(f.fileno())  # Ensure all file data is flushed to disk
+    # Handling file content based on its type
+    if isinstance(uploaded_file, tuple):
+        # If it's a tuple, it usually contains (filename, filedata)
+        filename, filedata = uploaded_file
+        file_path = os.path.join("uploaded_videos", filename)
+        with open(file_path, "wb") as f:
+            f.write(filedata)
+    elif isinstance(uploaded_file, str):
+        # If it's a string, assuming it's a file path
+        file_path = uploaded_file
+    else:
+        raise ValueError("Unexpected file input type")
 
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
     print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")
     return file_path
+
 
 def display_results(video_url, video_file, description):
     final_clip_path = None
@@ -137,17 +140,18 @@ h3 {
 }
 """
 
-with gr.Blocks(theme=custom_theme, css=css) as demo:
+with gr.Blocks() as demo:
     with gr.Column():
-        gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
-        gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
-        gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your video editing skills. Upload your video, describe the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at [Strongholdlabs.io](https://strongholdlabs.io/)**", elem_classes="centered-markdown")
-        video_url = gr.Textbox(label="Video URL:")
-        video_file = gr.File(label="Upload Video File:")
-        description = gr.Textbox(label="Describe your clip:")
+        video_url = gr.Textbox(label="Video URL")
+        video_file = gr.File(label="Upload Video File", type="file")
+        description = gr.Textbox(label="Describe your clip")
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
         download_output = gr.File(label="Download Processed Video")
-        submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output])
+        submit_button.click(
+            fn=display_results,
+            inputs=[video_url, video_file, description],
+            outputs=[video_output, download_output]
+        )
 
 demo.launch()
