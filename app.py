@@ -66,16 +66,23 @@ def save_uploaded_file(uploaded_file):
     print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")
     return file_path
 
-def display_results(video_file, description):
-    if video_file:
+def display_results(video_url, video_file, description):
+    """Process video from URL or file upload and return the results."""
+    final_clip_path = None
+
+    if video_url:
+        final_clip_path = process_video(video_url, description, is_url=True)
+    elif video_file:
         video_file_path = save_uploaded_file(video_file)
         if video_file_path:
             final_clip_path = process_video(video_file_path, description, is_url=False)
-            return final_clip_path, gr.Video.update(value=final_clip_path)
         else:
-            return "File save error", None
+            return "No file provided or file save error", None
+
+    if final_clip_path:
+        return final_clip_path, final_clip_path  # Returning the path twice, for both video and download components
     else:
-        return "No file provided", None
+        return "No matching scene found", None
 
 css = """
 body {
@@ -128,15 +135,15 @@ h3 {
 
 with gr.Blocks() as demo:
     with gr.Column():
-        upload_button = gr.UploadButton(label="Upload Video File", type="binary", file_types=["video"])
+        video_url = gr.Textbox(label="Video URL")
+        video_file = gr.UploadButton(label="Upload Video File", type="bytes", file_types=["video"])
         description = gr.Textbox(label="Describe your clip")
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
         download_output = gr.File(label="Download Processed Video")
-
         submit_button.click(
             fn=display_results,
-            inputs=[upload_button, description],
+            inputs=[video_url, video_file, description],
             outputs=[video_output, download_output]
         )
 
