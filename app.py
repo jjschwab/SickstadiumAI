@@ -54,7 +54,8 @@ def save_uploaded_file(file):
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, file.name)
     with open(file_path, "wb") as f:
-        f.write(file.getvalue())  # Write the content directly
+        # Use .read() to read the file content from the TemporaryUploadedFile
+        f.write(file.file.read())  
     return file_path
 
 def display_results(video_url, video_file, description):
