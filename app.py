@@ -53,7 +53,7 @@ def save_uploaded_file(uploaded_file):
     if uploaded_file is None:
         return None  # Handle cases where no file was uploaded
 
-    filedata = uploaded_file  # When using 'bytes', the filedata will be directly accessible
+    filedata = uploaded_file  # When using 'binary', the filedata will be directly accessible
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, "uploaded_video.mp4")  # Using a fixed name for simplicity
@@ -77,7 +77,6 @@ def display_results(video_file, description):
     else:
         return "No file provided", None
 
-        
 css = """
 body {
     background-color: #ffffff;
@@ -129,7 +128,7 @@ h3 {
 
 with gr.Blocks() as demo:
     with gr.Column():
-        upload_button = gr.UploadButton(label="Upload Video File", type="bytes", file_types=["video"])
+        upload_button = gr.UploadButton(label="Upload Video File", type="binary", file_types=["video"])
         description = gr.Textbox(label="Describe your clip")
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
