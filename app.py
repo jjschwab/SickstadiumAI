@@ -48,7 +48,9 @@ class CustomTheme(Base):
 custom_theme = CustomTheme()
 
 def save_uploaded_file(file):
-    file_path = f"uploaded_videos/{file.orig_name}"
+    upload_dir = "uploaded_videos"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, file.name)
     with open(file_path, "wb") as f:
         f.write(file.read())
     return file_path
