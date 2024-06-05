@@ -47,11 +47,18 @@ class CustomTheme(Base):
 
 custom_theme = CustomTheme()
 
+def save_uploaded_file(file):
+    file_path = f"uploaded_videos/{file.orig_name}"
+    with open(file_path, "wb") as f:
+        f.write(file.read())
+    return file_path
+
 def display_results(video_url, video_file, description):
     if video_url:
         final_clip_path = process_video(video_url, description, is_url=True)
     elif video_file:
-        final_clip_path = process_video(video_file.name, description, is_url=False)
+        video_file_path = save_uploaded_file(video_file)
+        final_clip_path = process_video(video_file_path, description, is_url=False)
     else:
         return "No video provided", None
 
