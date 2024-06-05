@@ -32,20 +32,30 @@ def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
 def ensure_video_format(video_path):
-    temp_path = f"temp_videos/formatted_{uuid.uuid4()}.mp4"
+    output_dir = "temp_videos"
+    os.makedirs(output_dir, exist_ok=True)
+    temp_path = os.path.join(output_dir, f"formatted_{uuid.uuid4()}.mp4")
     command = ['ffmpeg', '-i', video_path, '-c', 'copy', temp_path]
-    subprocess.run(command, check=True)
-    return temp_path
+    try:
+        subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return temp_path
+    except subprocess.CalledProcessError as e:
+        print(f"Error processing video with ffmpeg: {e.stderr.decode()}")
+        return None
 
 def find_scenes(video_path):
-    video_path = ensure_video_format(video_path)
-    video_manager = open_video(video_path)
+    formatted_video_path = ensure_video_format(video_path)
+    if formatted_video_path is None:
+        print("Video formatting failed. Exiting scene detection.")
+        return []
+    video_manager = open_video(formatted_video_path)
     scene_manager = SceneManager()
     scene_manager.add_detector(ContentDetector(threshold=30.0))
     scene_manager.detect_scenes(video_manager)
     scene_list = scene_manager.get_scene_list()
     scenes = [(scene[0].get_seconds(), scene[1].get_seconds()) for scene in scene_list]
     return scenes
+
 
 def convert_timestamp_to_seconds(timestamp):
     return float(timestamp)
@@ -116,15 +126,16 @@ def extract_best_scene(video_path, scene):
     return video_clip
 
 def process_video(video_input, description, is_url=True):
-    if is_url:
-        video_path = download_video(video_input)
-    else:
-        video_path = video_input
-
+    video_path = download_video(video_input) if is_url else video_input
     scenes = find_scenes(video_path)
+    if not scenes:
+        print("No scenes detected. Exiting.")
+        return None
     best_scene = analyze_scenes(video_path, scenes, description)
+    if not best_scene:
+        print("No suitable scenes found. Exiting.")
+        return None
     final_clip = extract_best_scene(video_path, best_scene)
-
     if final_clip:
         output_dir = "output"
         os.makedirs(output_dir, exist_ok=True)
@@ -143,4 +154,4 @@ def cleanup_temp_files():
                 if os.path.isfile(file_path):
                     os.unlink(file_path)
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"Error cleaning up temporary files: {e}")
