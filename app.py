@@ -5,6 +5,7 @@ from video_processing import process_video
 from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
+import shutil
 
 class CustomTheme(Base):
     def __init__(
@@ -54,7 +55,7 @@ def save_uploaded_file(file):
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, file.name)
     with open(file_path, "wb") as f:
-        f.write(file.read())  # Write the content directly
+        shutil.copyfileobj(file, f)
     return file_path
 
 def display_results(video_url, video_file, description):
