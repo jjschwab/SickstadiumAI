@@ -1,3 +1,4 @@
+import os
 import gradio as gr
 from video_processing import process_video
 from gradio.themes.base import Base
