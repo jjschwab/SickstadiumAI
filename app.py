@@ -1,11 +1,9 @@
 import gradio as gr
-from video_processing import process_video
+from video_processing import process_video, download_video, find_scenes, analyze_scenes, extract_best_scene, cleanup_temp_files
 from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 import uuid
 import os
-import matplotlib.pyplot as plt
-import numpy as np
 
 class CustomTheme(Base):
     def __init__(
@@ -50,6 +48,41 @@ class CustomTheme(Base):
 
 custom_theme = CustomTheme()
 
+def save_uploaded_file(uploaded_file):
+    upload_dir = "uploaded_videos"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, f"{uuid.uuid4()}.mp4")
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file)
+    return file_path
+
+def display_results(video_url, video_file, description):
+    if video_url:
+        video_path = download_video(video_url)
+    elif video_file:
+        video_path = save_uploaded_file(video_file)
+    else:
+        return "No video provided", None, None
+
+    scenes = find_scenes(video_path)
+    if not scenes:
+        return "No scenes detected", None, None
+
+    best_scene, sentiment_distribution = analyze_scenes(video_path, scenes, description)
+    if best_scene:
+        final_clip = extract_best_scene(video_path, best_scene)
+        if final_clip:
+            output_dir = "output"
+            os.makedirs(output_dir, exist_ok=True)
+            final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
+            final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
+            cleanup_temp_files()
+            return final_clip_path, sentiment_distribution
+        else:
+            return "No matching scene found", None
+    else:
+        return "No suitable scenes found", None
+
 # Custom CSS for additional styling
 css = """
 body {
@@ -79,7 +112,7 @@ body {
     color: #ffffff;
     border: 2px solid #ffffff;
 }
-label[for="video_url"], label[for="description"], label[for="video_file"] {
+label[for="video_url"], label[for="description"] {
     color: #eb5726 !important;
 }
 h3 {
@@ -97,24 +130,20 @@ h3 {
 }
 """
 
-def display_results(video_url, video_file, description):
-    video_path = process_video(video_url or video_file, description)
-    return video_path, video_path  # This should be updated based on actual function output
-
 with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
         gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
+        gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
         video_url = gr.Textbox(label="Video URL:", elem_id="video_url")
-        video_file = gr.File(label="Upload Video File:", type="binary", interactive=True, file_types=["video"], elem_id="video_file")
+        video_file = gr.File(label="Upload Video File:", interactive=True, file_types=["video"], type="binary")
         description = gr.Textbox(label="Describe your clip:", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
-        download_output = gr.File(label="Download Processed Video", elem_id="download_output")
         sentiment_plot = gr.Plot(label="Sentiment Distribution", elem_id="sentiment_plot")
         submit_button.click(
             fn=display_results,
             inputs=[video_url, video_file, description],
-            outputs=[video_output, download_output, sentiment_plot]
+            outputs=[video_output, sentiment_plot]
         )
 
 demo.launch()
