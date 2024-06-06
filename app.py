@@ -77,7 +77,7 @@ def display_results(video_url, video_file, description):
         final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
         final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
         cleanup_temp_files()
-        sentiment_display = "\n".join(f"{k}: {v:.2f}%" for k, v in sentiments.items())  # Format sentiment data
+        sentiment_display = "\n".join(f"**{k}:** {v:.2f}%" for k, v in sentiments.items())  # Format sentiment data for Markdown
         return final_clip_path, final_clip_path, sentiment_display
     else:
         return "No matching scene found", None, "No data"
@@ -152,7 +152,7 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
         download_output = gr.File(label="Download Processed Video", elem_id="download_output")
-        sentiment_output = gr.Textbox(label="Sentiment Scores", elem_id="sentiment_output", readonly=True)
+        sentiment_output = gr.Markdown(label="Sentiment Scores", elem_id="sentiment_output")
         submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output, sentiment_output])
 
 demo.launch()
