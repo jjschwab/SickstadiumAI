@@ -185,7 +185,9 @@ def save_uploaded_file(uploaded_file):
 
 with gr.Blocks(theme=custom_theme) as demo:
     with gr.Column():
-        gr.Markdown("# **Sickstadium AI**")
+        gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
+        gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
+        gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your video editing skills. Upload your video, describe the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at [Strongholdlabs.io](https://strongholdlabs.io/)**", elem_classes="centered-markdown")
         video_url = gr.Textbox(label="Video URL:")
         video_file = gr.File(label="Upload Video File:", type="binary")
         description = gr.Textbox(label="Describe your clip:")
