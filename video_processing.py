@@ -1,8 +1,6 @@
 import os
 import cv2
-from scenedetect import SceneManager, open_video, split_video_ffmpeg
 from scenedetect import VideoManager, SceneManager
-
 from scenedetect.detectors import ContentDetector
 from moviepy.editor import VideoFileClip
 from transformers import CLIPProcessor, CLIPModel
@@ -10,7 +8,6 @@ import torch
 import yt_dlp
 from PIL import Image
 import uuid
-import subprocess
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
@@ -33,56 +30,28 @@ def download_video(url):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
-def ensure_video_format(video_path):
-    output_dir = "temp_videos"
-    os.makedirs(output_dir, exist_ok=True)
-    temp_path = os.path.join(output_dir, f"formatted_{uuid.uuid4()}.mp4")
-    command = ['ffmpeg', '-i', video_path, '-c', 'copy', temp_path]
-    try:
-        subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return temp_path
-    except subprocess.CalledProcessError as e:
-        print(f"Error processing video with ffmpeg: {e.stderr.decode()}")
-        return None
-
 def find_scenes(video_path):
-    # Ensure video path is a list, as required by VideoManager
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    
-    # Add ContentDetector with an adjusted threshold for finer segmentation
-    scene_manager.add_detector(ContentDetector(threshold=33))
-
-    # Begin processing the video
+    scene_manager.add_detector(ContentDetector(threshold=33))  # Adjusted threshold for finer segmentation
+    video_manager.set_downscale_factor()
     video_manager.start()
-
-    # Detect scenes
     scene_manager.detect_scenes(frame_source=video_manager)
-
-    # Get the list of detected scenes
     scene_list = scene_manager.get_scene_list()
-    
-    # Release the video manager resources
     video_manager.release()
-
-    # Convert scene list to timecodes
     scenes = [(start.get_timecode(), end.get_timecode()) for start, end in scene_list]
-    
     return scenes
 
-
-
 def convert_timestamp_to_seconds(timestamp):
-    return float(timestamp)
+    h, m, s = map(float, timestamp.split(':'))
+    return int(h) * 3600 + int(m) * 60 + s
 
-def timecode_to_seconds(timecode):
-    h, m, s = timecode.split(':')
-    return int(h) * 3600 + int(m) * 60 + float(s)
-
-    
 def extract_frames(video_path, start_time, end_time):
     frames = []
-    video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
+    start_seconds = convert_timestamp_to_seconds(start_time)
+    end_seconds = convert_timestamp_to_seconds(end_time)
+    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
+    # Extract more frames: every frame in the scene
     for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 5)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
@@ -100,13 +69,12 @@ def analyze_scenes(video_path, scenes, description):
         "Still-camera shot of a person's face"
     ]
 
+    # Tokenize and encode the description text
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
 
     for scene_num, (start_time, end_time) in enumerate(scenes):
-        start_seconds = timecode_to_seconds(start_time)
-        end_seconds = timecode_to_seconds(end_time)
         frames = extract_frames(video_path, start_time, end_time)
         if not frames:
             print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time} - No frames extracted")
@@ -123,14 +91,16 @@ def analyze_scenes(video_path, scenes, description):
                 scene_prob += positive_similarity - negative_similarities
 
         scene_prob /= len(frames)
-        scene_duration = end_seconds - start_seconds
-
+        scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}")
 
         scene_scores.append((scene_prob, start_time, end_time, scene_duration))
 
+    # Sort scenes by probability in descending order and select the top 5
     scene_scores.sort(reverse=True, key=lambda x: x[0])
     top_scenes = scene_scores[:5]
+
+    # Find the longest scene among the top 5
     longest_scene = max(top_scenes, key=lambda x: x[3])
 
     if longest_scene:
@@ -145,20 +115,17 @@ def extract_best_scene(video_path, scene):
         return None
 
     start_time, end_time = scene
-    video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
+    start_seconds = convert_timestamp_to_seconds(start_time)
+    end_seconds = convert_timestamp_to_seconds(end_time)
+    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     return video_clip
 
-def process_video(video_input, description, is_url=True):
-    video_path = download_video(video_input) if is_url else video_input
+def process_video(video_url, description):
+    video_path = download_video(video_url)
     scenes = find_scenes(video_path)
-    if not scenes:
-        print("No scenes detected. Exiting.")
-        return None
     best_scene = analyze_scenes(video_path, scenes, description)
-    if not best_scene:
-        print("No suitable scenes found. Exiting.")
-        return None
     final_clip = extract_best_scene(video_path, best_scene)
+
     if final_clip:
         output_dir = "output"
         os.makedirs(output_dir, exist_ok=True)
@@ -177,4 +144,4 @@ def cleanup_temp_files():
                 if os.path.isfile(file_path):
                     os.unlink(file_path)
             except Exception as e:
-                print(f"Error cleaning up temporary files: {e}")
+                print(f"Error: {e}")
