@@ -7,3 +7,4 @@ transformers
 torch
 yt-dlp
 torchvision
+plotly
