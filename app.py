@@ -7,7 +7,6 @@ import uuid
 import os
 import plotly.graph_objects as go
 
-
 class CustomTheme(Base):
     def __init__(
         self,
@@ -129,7 +128,7 @@ def display_results(video_url, video_file, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(#eb5726 1px, transparent 1px)
+    background-image: radial-gradient(#eb5726 1px, transparent 1px);
     background-size: 10px 10px;
     background-repeat: repeat;
     background-attachment: fixed;
@@ -174,6 +173,7 @@ h3 {
     text-transform: uppercase;
 }
 """
+
 
 def save_uploaded_file(uploaded_file):
     upload_dir = "uploaded_videos"
