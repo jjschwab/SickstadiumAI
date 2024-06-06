@@ -1,5 +1,5 @@
 import gradio as gr
-from video_processing import process_video, download_video, save_uploaded_file, find_scenes, analyze_scenes, extract_best_scene, cleanup_temp_files
+from video_processing import process_video, download_video, find_scenes, analyze_scenes, extract_best_scene, cleanup_temp_files
 from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
@@ -49,6 +49,14 @@ class CustomTheme(Base):
 
 custom_theme = CustomTheme()
 
+def save_uploaded_file(uploaded_file):
+    upload_dir = "uploaded_videos"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, f"{uuid.uuid4()}.mp4")
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file)
+    return file_path
+    
 def display_results(video_url, video_file, description):
     if video_url:
         video_path = download_video(video_url)
