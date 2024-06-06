@@ -192,9 +192,9 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
         video_file = gr.File(label="Upload Video File:", type="binary")
         description = gr.Textbox(label="Describe your clip:")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
-        video_output = gr.Video(label="Processed Video")
-        download_output = gr.File(label="Download Processed Video")
-        sentiment_output = gr.Plot(label="Sentiment Analysis")  # Changed from Markdown to Plot
+        video_output = gr.Video(label="Processed Video:")
+        download_output = gr.File(label="Download Processed Video:")
+        sentiment_output = gr.Plot(label="Predicted User Feedback:")  # Changed from Markdown to Plot
         submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output, sentiment_output])
 
 demo.launch()
