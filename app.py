@@ -70,8 +70,10 @@ def display_results(video_url, video_file, description):
     if not scenes:
         return "No scenes detected", None, None
 
-    best_scene, sentiment_distribution = analyze_scenes(video_path, scenes, description)
-    if best_scene:
+    best_scene_info = analyze_scenes(video_path, scenes, description)
+    if best_scene_info:
+        best_scene = best_scene_info[0]
+        sentiment_distribution = best_scene_info[4]  # Ensure you're accessing the correct index for sentiment_distribution
         final_clip = extract_best_scene(video_path, best_scene)
         if final_clip:
             output_dir = "output"
@@ -79,11 +81,18 @@ def display_results(video_url, video_file, description):
             final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
             final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
             cleanup_temp_files()
-            return final_clip_path, sentiment_distribution
+
+            # Check if sentiment_distribution is correctly obtained
+            if sentiment_distribution:
+                plot = create_radial_plot(sentiment_distribution)
+                return final_clip_path, plot
+            else:
+                return final_clip_path, "No sentiment data available"
         else:
             return "No matching scene found", None
     else:
         return "No suitable scenes found", None
+
 
 # Custom CSS for additional styling
 css = """
