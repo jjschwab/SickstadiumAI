@@ -1,5 +1,4 @@
 import gradio as gr
-import os
 
 def save_and_display_video(video_file):
     if video_file is None:
@@ -19,7 +18,7 @@ def save_and_display_video(video_file):
 
 with gr.Blocks() as demo:
     with gr.Column():
-        video_file = gr.UploadButton(label="Upload Video File", file_types=["mp4", "avi", "mov"], interactive=True)
+        video_file = gr.File(label="Upload Video File", type="binary", file_types="video", interactive=True)
         output_video = gr.Video()
         output_message = gr.Textbox(label="Output Message")
         submit_button = gr.Button("Display Video")
