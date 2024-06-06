@@ -4,6 +4,8 @@ from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 import uuid
 import os
+from typing import Iterable
+
 
 class CustomTheme(Base):
     def __init__(
