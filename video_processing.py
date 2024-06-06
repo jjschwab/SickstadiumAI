@@ -137,9 +137,13 @@ def analyze_scenes(video_path, scenes, description):
 
         scene_scores.append((scene_prob, start_time, end_time, scene_duration, sentiment_percentages))
 
-    # Sort scenes by probability and select the best scene
-    scene_scores.sort(reverse=True, key=lambda x: x[0])
-    best_scene = max(scene_scores, key=lambda x: x[3])  # Select based on duration among the top scenes
+        # Sort scenes by confidence, highest first
+        scene_scores.sort(reverse=True, key=lambda x: x[0])
+        
+        # Select the longest scene from the top 3 highest confidence scenes
+        top_3_scenes = scene_scores[:3]  # Get the top 3 scenes
+        best_scene = max(top_3_scenes, key=lambda x: x[3])  # Find the longest scene from these top 3
+
 
     if best_scene:
         print(f"Best Scene: Start={best_scene[1]}, End={best_scene[2]}, Probability={best_scene[0]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
