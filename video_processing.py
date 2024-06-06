@@ -119,6 +119,7 @@ def analyze_scenes(video_path, scenes, description):
                 positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
                 negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
                 scene_prob += positive_similarity - negative_similarities
+            print(classify_frame(frame))
 
         scene_prob /= len(frames)
         scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
