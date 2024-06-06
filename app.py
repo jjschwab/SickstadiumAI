@@ -184,7 +184,7 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
         description = gr.Textbox(label="Describe your clip:", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
-        download_output = gr.File(label="Download Processed Video", elem_id="download_output", type="file")  # Define this here
+        download_output = gr.File(label="Download Processed Video", elem_id="download_output", type="binary")  # Define this here
         sentiment_plot = gr.Plot(label="Sentiment Distribution", elem_id="sentiment_plot")  # Adding elem_id for clarity
 
         submit_button.click(
