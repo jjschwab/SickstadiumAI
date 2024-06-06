@@ -1,14 +1,17 @@
 import gradio as gr
 import os
 
-def display_video(video_file):
+def save_and_display_video(video_file):
     if video_file is None:
         return None, "No video uploaded."
 
-    # Check if the uploaded file is a valid binary file
     try:
-        if len(video_file) > 0:  # Simple check to confirm it contains content
-            return video_file, None
+        if len(video_file) > 0:
+            # Save the binary content to a file
+            file_path = 'uploaded_video.mp4'  # Assuming .mp4 for simplicity
+            with open(file_path, 'wb') as f:
+                f.write(video_file)
+            return file_path, "Video uploaded and displayed successfully."
         else:
             return None, "Uploaded file is empty."
     except Exception as e:
@@ -16,12 +19,12 @@ def display_video(video_file):
 
 with gr.Blocks() as demo:
     with gr.Column():
-        video_file = gr.File(label="Upload Video File", type="binary", file_types=["mp4", "avi", "mov"])
+        video_file = gr.File(label="Upload Video File", type="binary", file_types=["mp4", "avi", "move"], interactive=True)
         output_video = gr.Video()
         output_message = gr.Textbox(label="Output Message")
         submit_button = gr.Button("Display Video")
         submit_button.click(
-            fn=display_video, 
+            fn=save_and_display_video, 
             inputs=video_file, 
             outputs=[output_video, output_message]
         )
