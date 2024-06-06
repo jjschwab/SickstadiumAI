@@ -1,6 +1,8 @@
 import os
 import cv2
 from scenedetect import SceneManager, open_video, split_video_ffmpeg
+from scenedetect import VideoManager, SceneManager
+
 from scenedetect.detectors import ContentDetector
 from moviepy.editor import VideoFileClip
 from transformers import CLIPProcessor, CLIPModel
