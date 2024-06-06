@@ -75,6 +75,11 @@ def find_scenes(video_path):
 def convert_timestamp_to_seconds(timestamp):
     return float(timestamp)
 
+def timecode_to_seconds(timecode):
+    h, m, s = timecode.split(':')
+    return int(h) * 3600 + int(m) * 60 + float(s)
+
+    
 def extract_frames(video_path, start_time, end_time):
     frames = []
     video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
@@ -100,6 +105,8 @@ def analyze_scenes(video_path, scenes, description):
     positive_feature, negative_features = text_features[0], text_features[1:]
 
     for scene_num, (start_time, end_time) in enumerate(scenes):
+        start_seconds = timecode_to_seconds(start_time)
+        end_seconds = timecode_to_seconds(end_time)
         frames = extract_frames(video_path, start_time, end_time)
         if not frames:
             print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time} - No frames extracted")
@@ -116,7 +123,8 @@ def analyze_scenes(video_path, scenes, description):
                 scene_prob += positive_similarity - negative_similarities
 
         scene_prob /= len(frames)
-        scene_duration = end_time - start_time
+        scene_duration = end_seconds - start_seconds
+
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}")
 
         scene_scores.append((scene_prob, start_time, end_time, scene_duration))
