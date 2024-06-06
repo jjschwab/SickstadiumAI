@@ -44,32 +44,28 @@ def ensure_video_format(video_path):
         return None
 
 def find_scenes(video_path):
-    print(f"Processing video for scene detection: {video_path}")
-    video_path = ensure_video_format(video_path)
-    print(f"Video formatted at path: {video_path}")
-    
-    try:
-        video_manager = open_video(video_path)
-    except Exception as e:
-        print(f"Failed to open video: {e}")
-        return []
-
+    # Ensure video path is a list, as required by VideoManager
+    video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector(threshold=30.0))
     
-    try:
-        scene_manager.detect_scenes(video_manager)
-    except Exception as e:
-        print(f"Error during scene detection: {e}")
-        return []
+    # Add ContentDetector with an adjusted threshold for finer segmentation
+    scene_manager.add_detector(ContentDetector(threshold=33))
 
+    # Begin processing the video
+    video_manager.start()
+
+    # Detect scenes
+    scene_manager.detect_scenes(frame_source=video_manager)
+
+    # Get the list of detected scenes
     scene_list = scene_manager.get_scene_list()
-    if not scene_list:
-        print("No scenes detected.")
-        return []
+    
+    # Release the video manager resources
+    video_manager.release()
 
-    scenes = [(scene[0].get_seconds(), scene[1].get_seconds()) for scene in scene_list]
-    print(f"Detected scenes: {scenes}")
+    # Convert scene list to timecodes
+    scenes = [(start.get_timecode(), end.get_timecode()) for start, end in scene_list]
+    
     return scenes
 
 
