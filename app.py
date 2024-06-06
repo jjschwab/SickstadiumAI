@@ -5,6 +5,7 @@ from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
 import uuid
 import os
+import matplotlib as plt
 
 class CustomTheme(Base):
     def __init__(
