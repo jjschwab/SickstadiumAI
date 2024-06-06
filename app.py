@@ -69,21 +69,29 @@ def display_results(video_url, video_file, description):
     if not scenes:
         return "No scenes detected", None, "No data"
 
-    best_scene_times, sentiments = analyze_scenes(video_path, scenes, description)  # Updated to receive two values
+    best_scene_times, sentiments = analyze_scenes(video_path, scenes, description)
     if not best_scene_times:
         return "No matching scene found", None, "No data"
 
-    final_clip = extract_best_scene(video_path, best_scene_times)  # Unchanged usage of best_scene_times
+    final_clip = extract_best_scene(video_path, best_scene_times)
     if final_clip:
         output_dir = "output"
         os.makedirs(output_dir, exist_ok=True)
         final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
         final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
         cleanup_temp_files()
-        sentiment_display = "\n".join(f"**{k}:** {v:.2f}%" for k, v in sentiments.items())  # Format sentiment data for Markdown
+
+        # Calculate the total sum of sentiment scores
+        total_score = sum(sentiments.values())
+        if total_score == 0:
+            sentiment_display = "\n".join(f"**{k}:** 0%" for k in sentiments)  # Handle case where all scores are zero
+        else:
+            sentiment_display = "\n".join(f"**{k}:** {v / total_score * 100:.1f}%" for k, v in sentiments.items())
+
         return final_clip_path, final_clip_path, sentiment_display
     else:
         return "No matching scene found", None, "No data"
+
         
 
 # Custom CSS for additional styling
