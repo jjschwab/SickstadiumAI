@@ -183,7 +183,7 @@ def save_uploaded_file(uploaded_file):
         f.write(uploaded_file)
     return file_path
 
-with gr.Blocks(theme=custom_theme, css=css)) as demo:
+with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
         gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
         gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
