@@ -69,8 +69,11 @@ def display_results(video_url, video_file, description):
     if not scenes:
         return "No scenes detected", None, "No data"
 
-    best_scene, sentiments = analyze_scenes(video_path, scenes, description)  # Ensure this function also returns sentiment data
-    final_clip = extract_best_scene(video_path, best_scene)
+    best_scene_times, sentiments = analyze_scenes(video_path, scenes, description)  # Updated to receive two values
+    if not best_scene_times:
+        return "No matching scene found", None, "No data"
+
+    final_clip = extract_best_scene(video_path, best_scene_times)  # Unchanged usage of best_scene_times
     if final_clip:
         output_dir = "output"
         os.makedirs(output_dir, exist_ok=True)
@@ -143,16 +146,14 @@ def save_uploaded_file(uploaded_file):
 
 with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
-        gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
-        gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
-        gr.Markdown("**Welcome to Sickstadium AI. Our goal is to empower content creators with the ability to tell their stories without the friction of traditional video editing software. Skip the timeline, and don't worry about your video editing skills. Upload your video, describe the clip you want, and let our AI video editor do the work for you. Get more info about the Sickstadium project at [Strongholdlabs.io](https://strongholdlabs.io/)**", elem_classes="centered-markdown")
-        video_url = gr.Textbox(label="Video URL:", elem_id="video_url")
-        video_file = gr.File(label="Upload Video File:", elem_id="video_file", interactive=True, file_types=["video"], type="binary")
-        description = gr.Textbox(label="Describe your clip:", elem_id="description")
-        submit_button = gr.Button("Process Video", elem_id="submit_button")
-        video_output = gr.Video(label="Processed Video", elem_id="video_output")
-        download_output = gr.File(label="Download Processed Video", elem_id="download_output")
-        sentiment_output = gr.Markdown(label="Sentiment Scores", elem_id="sentiment_output")
+        gr.Markdown("# **Sickstadium AI**")
+        video_url = gr.Textbox(label="Video URL:")
+        video_file = gr.File(label="Upload Video File:", type="binary")
+        description = gr.Textbox(label="Describe your clip:")
+        submit_button = gr.Button("Process Video")
+        video_output = gr.Video(label="Processed Video")
+        download_output = gr.File(label="Download Processed Video")
+        sentiment_output = gr.Markdown(label="Sentiment Scores")  # Using Markdown to display sentiment scores
         submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output, sentiment_output])
 
 demo.launch()
