@@ -71,17 +71,25 @@ def display_results(video_url, video_file, description):
         return "No scenes detected", None, None
 
     best_scene, sentiment_distribution = analyze_scenes(video_path, scenes, description)
-    final_clip = extract_best_scene(video_path, best_scene)
-    if final_clip:
-        output_dir = "output"
-        os.makedirs(output_dir, exist_ok=True)
-        final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
-        final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
-        cleanup_temp_files()
-        plot = create_radial_plot(sentiment_distribution)
-        return final_clip_path, plot
+    if best_scene:
+        final_clip = extract_best_scene(video_path, best_scene)
+        if final_clip:
+            output_dir = "output"
+            os.makedirs(output_dir, exist_ok=True)
+            final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
+            final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
+            cleanup_temp_files()
+
+            # Create the radial plot using sentiment_distribution
+            if sentiment_distribution:
+                plot = create_radial_plot(sentiment_distribution)
+                return final_clip_path, plot
+            else:
+                return final_clip_path, "No sentiment data available"
+        else:
+            return "No matching scene found", None
     else:
-        return "No matching scene found", None
+        return "No suitable scenes found", None
 
         
 
@@ -145,27 +153,26 @@ def save_uploaded_file(uploaded_file):
 
 import matplotlib.pyplot as plt
 
-def create_radial_plot(sentiments):
-    # Convert sentiment dictionary to lists
-    labels = list(sentiments.keys())
-    values = list(sentiments.values())
 
-    # Create radial plot
-    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+def create_radial_plot(sentiments):
+    labels = list(sentiments.keys())
+    stats = list(sentiments.values())
+    num_vars = len(labels)
+
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    stats += stats[:1]
+    angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-    ax.fill(angles, values, color='red', alpha=0.25)
+    ax.fill(angles, stats, color='red', alpha=0.25)
+    ax.plot(angles, stats, color='red', linewidth=2)
     ax.set_yticklabels([])
-    ax.set_xticks(angles)
+    ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
 
-    # Save plot to a string buffer
-    from io import BytesIO
-    buf = BytesIO()
-    plt.savefig(buf, format='png')
-    plt.close(fig)
-    buf.seek(0)
-    return buf
+    plt.show()
+
+    return fig
 
 with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
