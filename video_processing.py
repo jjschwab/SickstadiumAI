@@ -11,6 +11,8 @@ import uuid
 from torchvision import models, transforms
 from torch.nn import functional as F
 
+categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
@@ -87,9 +89,10 @@ def extract_frames(video_path, start_time, end_time):
         frames.append(frame)
     return frames
 
+import numpy as np
+
 def analyze_scenes(video_path, scenes, description):
     scene_scores = []
-
     negative_descriptions = [
         "black screen",
         "Intro text for a video",
@@ -99,7 +102,6 @@ def analyze_scenes(video_path, scenes, description):
         "Still-camera shot of a person's face"
     ]
 
-    # Tokenize and encode the description text
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
@@ -111,6 +113,7 @@ def analyze_scenes(video_path, scenes, description):
             continue
 
         scene_prob = 0.0
+        sentiment_distributions = np.zeros(8)  # Assuming there are 8 sentiments
         for frame in frames:
             image = Image.fromarray(frame[..., ::-1])
             image_input = processor(images=image, return_tensors="pt").to(device)
@@ -119,27 +122,30 @@ def analyze_scenes(video_path, scenes, description):
                 positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
                 negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
                 scene_prob += positive_similarity - negative_similarities
-            print(classify_frame(frame))
+            
+            frame_sentiments = classify_frame(frame)
+            sentiment_distributions += np.array(frame_sentiments)
 
+        sentiment_distributions /= len(frames)  # Normalize to get average probabilities
+        sentiment_percentages = {category: round(prob * 100, 2) for category, prob in zip(categories, sentiment_distributions)}
         scene_prob /= len(frames)
         scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
-        print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}")
+        print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}, Sentiments: {sentiment_percentages}")
 
-        scene_scores.append((scene_prob, start_time, end_time, scene_duration))
+        scene_scores.append((scene_prob, start_time, end_time, scene_duration, sentiment_percentages))
 
-    # Sort scenes by probability in descending order and select the top 5
+    # Sort scenes by probability and select the best scene
     scene_scores.sort(reverse=True, key=lambda x: x[0])
-    top_scenes = scene_scores[:5]
+    best_scene = max(scene_scores, key=lambda x: x[3])  # Select based on duration among the top scenes
 
-    # Find the longest scene among the top 5
-    longest_scene = max(top_scenes, key=lambda x: x[3])
-
-    if longest_scene:
-        print(f"Longest Scene: Start={longest_scene[1]}, End={longest_scene[2]}, Probability={longest_scene[0]}, Duration={longest_scene[3]}")
+    if best_scene:
+        print(f"Best Scene: Start={best_scene[1]}, End={best_scene[2]}, Probability={best_scene[0]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
     else:
         print("No suitable scene found")
 
-    return longest_scene[1:3] if longest_scene else None
+    return best_scene[1:3] if best_scene else None
+
+
 
 def extract_best_scene(video_path, scene):
     if scene is None:
