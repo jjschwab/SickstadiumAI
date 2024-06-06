@@ -50,21 +50,12 @@ class CustomTheme(Base):
 custom_theme = CustomTheme()
 
 def save_uploaded_file(uploaded_file):
-    if uploaded_file is None:
-        print("No file uploaded.")
-        return None  # Handle cases where no file was uploaded
-    
-    print("File received:", type(uploaded_file), len(uploaded_file))
+    import os
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, "uploaded_video.mp4")
-
+    file_path = os.path.join(upload_dir, uploaded_file.name)
     with open(file_path, "wb") as f:
-        f.write(uploaded_file)  # Write file content to disk
-        f.flush()
-        os.fsync(f.fileno())  # Ensure all file data is flushed to disk
-
-    print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")  # Debugging
+        f.write(uploaded_file.file.read())  # Write the content to the new file
     return file_path
 
 def display_results(video_file):
@@ -134,16 +125,23 @@ def interface_function(video_file):
         return f"File saved at {file_path}"
     return "No file uploaded."
 
-def test_upload(video_file):
-    if video_file is not None:
-        return f"Received file with {len(video_file)} bytes"
-    else:
+def test_upload(uploaded_file):
+    if uploaded_file is None:
         return "No file uploaded."
+    # Assuming the file is saved in a temporary location and processed
+    file_path = save_uploaded_file(uploaded_file)  # Ensure this function saves and returns the path
+    if not file_path:
+        return "Failed to save file."
+    # Process the video using the path
+    result_path = process_video(file_path, description="Describe your clip here", is_url=False)
+    if not result_path:
+        return "Failed to process video or no scenes found."
+    return f"Video processed and saved to: {result_path}"
 
 with gr.Blocks() as demo:
     with gr.Column():
         video_file = gr.UploadButton("Upload Video File", type="binary", file_types=["video"])
-        output = gr.Textbox()
+        output = gr.Textbox(label="Output")
         submit_button = gr.Button("Process Video")
         submit_button.click(
             fn=test_upload, 
