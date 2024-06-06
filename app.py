@@ -131,15 +131,21 @@ def interface_function(video_file):
 def test_upload(uploaded_file):
     if uploaded_file is None:
         return "No file uploaded."
-    # Assuming the file is saved in a temporary location and processed
-    file_path = save_uploaded_file(uploaded_file)  # Ensure this function saves and returns the path
-    if not file_path:
-        return "Failed to save file."
-    # Process the video using the path
-    result_path = process_video(file_path, description="Describe your clip here", is_url=False)
-    if not result_path:
-        return "Failed to process video or no scenes found."
-    return f"Video processed and saved to: {result_path}"
+    try:
+        # Save the uploaded file and process it
+        file_path = save_uploaded_file(uploaded_file)
+        if not file_path:
+            return "Failed to save file."
+
+        # Process the video using the path
+        result_path = process_video(file_path, description="Describe your clip here", is_url=False)
+        if not result_path:
+            return "Failed to process video or no scenes found."
+
+        return f"Video processed and saved to: {result_path}"
+    except Exception as e:
+        # Catch any exceptions that occur and return them for debugging
+        return f"An error occurred: {str(e)}"
 
 with gr.Blocks() as demo:
     with gr.Column():
