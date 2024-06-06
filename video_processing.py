@@ -8,10 +8,40 @@ import torch
 import yt_dlp
 from PIL import Image
 import uuid
+from torchvision import models, transforms
+from torch.nn import functional as F
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+
+def classify_frame(frame):
+    categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
+    # Load ResNet-50 model
+    resnet50 = models.resnet50(pretrained=True)
+    resnet50.eval().to(device)
+
+    # Preprocess the image
+    preprocess = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    input_tensor = preprocess(Image.fromarray(frame))
+    input_batch = input_tensor.unsqueeze(0).to(device)
+
+    # Predict with ResNet-50
+    with torch.no_grad():
+        output = resnet50(input_batch)
+        probabilities = F.softmax(output[0], dim=0)
+
+    # Assuming categories correspond to indices (this is for demo, adjust accordingly)
+    results = {categories[i]: probabilities[i].item() for i in range(len(categories))}
+    return results
+
 
 def download_video(url):
     ydl_opts = {
@@ -124,8 +154,13 @@ def process_video(video_url, description):
     video_path = download_video(video_url)
     scenes = find_scenes(video_path)
     best_scene = analyze_scenes(video_path, scenes, description)
+    if best_scene:
+        frames = extract_frames(video_path, *best_scene)
+        if frames:
+            # Classify the first frame
+            frame_results = classify_frame(frames[0])
+            print("Classification of the first frame:", frame_results)
     final_clip = extract_best_scene(video_path, best_scene)
-
     if final_clip:
         output_dir = "output"
         os.makedirs(output_dir, exist_ok=True)
