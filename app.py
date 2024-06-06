@@ -129,7 +129,7 @@ def display_results(video_url, video_file, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(circle at center, rgba(235, 87, 38, 1) 0%, rgba(235, 87, 38, 0) 70%), radial-gradient(#eb5726 1px, transparent 1px)
+    background-image: radial-gradient(#eb5726 1px, transparent 1px)
     background-size: 10px 10px;
     background-repeat: repeat;
     background-attachment: fixed;
