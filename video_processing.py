@@ -143,11 +143,10 @@ def analyze_scenes(video_path, scenes, description):
 
     if best_scene:
         print(f"Best Scene: Start={best_scene[1]}, End={best_scene[2]}, Probability={best_scene[0]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
+        return (best_scene[1], best_scene[2]), best_scene[4]  # Returning a tuple with scene times and sentiments
     else:
         print("No suitable scene found")
-
-    return best_scene[1:3] if best_scene else None
-
+        return None, {}
 
 
 def extract_best_scene(video_path, scene):
