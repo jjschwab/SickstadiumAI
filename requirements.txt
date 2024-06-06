@@ -6,3 +6,4 @@ scenedetect
 transformers
 torch
 yt-dlp
+torchvision
