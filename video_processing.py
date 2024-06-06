@@ -154,21 +154,23 @@ def process_video(video_url, description):
     video_path = download_video(video_url)
     scenes = find_scenes(video_path)
     best_scene = analyze_scenes(video_path, scenes, description)
-    if best_scene:
-        frames = extract_frames(video_path, *best_scene)
-        if frames:
-            # Classify the first frame
-            frame_results = classify_frame(frames[0])
-            print("Classification of the first frame:", frame_results)
     final_clip = extract_best_scene(video_path, best_scene)
+
     if final_clip:
+        # Assuming final_clip is a MoviePy VideoFileClip object
+        frame = np.array(final_clip.get_frame(0))  # Get the first frame at t=0 seconds
+        frame_classification = classify_frame(frame)  # Classify the frame
+        print("Frame classification probabilities:", frame_classification)
+
         output_dir = "output"
         os.makedirs(output_dir, exist_ok=True)
         final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
         final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
         cleanup_temp_files()
         return final_clip_path
+
     return None
+
 
 def cleanup_temp_files():
     temp_dir = 'temp_videos'
