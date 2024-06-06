@@ -63,13 +63,13 @@ def display_results(video_url, video_file, description):
     elif video_file:
         video_path = save_uploaded_file(video_file)
     else:
-        return "No video provided", None
+        return "No video provided", None, "No data"
 
     scenes = find_scenes(video_path)
     if not scenes:
-        return "No scenes detected", None
+        return "No scenes detected", None, "No data"
 
-    best_scene = analyze_scenes(video_path, scenes, description)
+    best_scene, sentiments = analyze_scenes(video_path, scenes, description)  # Ensure this function also returns sentiment data
     final_clip = extract_best_scene(video_path, best_scene)
     if final_clip:
         output_dir = "output"
@@ -77,9 +77,10 @@ def display_results(video_url, video_file, description):
         final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
         final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
         cleanup_temp_files()
-        return final_clip_path, final_clip_path
+        sentiment_display = "\n".join(f"{k}: {v:.2f}%" for k, v in sentiments.items())  # Format sentiment data
+        return final_clip_path, final_clip_path, sentiment_display
     else:
-        return "No matching scene found", None
+        return "No matching scene found", None, "No data"
         
 
 # Custom CSS for additional styling
@@ -151,6 +152,7 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
         download_output = gr.File(label="Download Processed Video", elem_id="download_output")
-        submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output])
+        sentiment_output = gr.Textbox(label="Sentiment Scores", elem_id="sentiment_output", readonly=True)
+        submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output, sentiment_output])
 
 demo.launch()
