@@ -67,26 +67,17 @@ def save_uploaded_file(uploaded_file):
     print(f"File saved to {file_path}, size: {os.path.getsize(file_path)} bytes")  # Debugging
     return file_path
 
-def display_results(video_url, video_file, description):
-    """Process video from URL or file upload and return the results."""
-    print("Function called with:", video_url, video_file, description)
-    if video_url:
-        print("Processing video from URL.")
-        # Simplified for testing: Just simulate processing and return a URL.
-        return "Processed video URL would be here", "Dummy video URL for testing"
-    elif video_file:
-        print("Received video file for processing.")
-        video_file_path = save_uploaded_file(video_file)
-        if video_file_path:
-            print(f"Video file saved to: {video_file_path}")
-            # Simplified for testing
-            return "Processed video file would be here", "Dummy video file path for testing"
+def display_results(video_file):
+    if video_file:
+        video_file_path = save_uploaded_file(video_file)  # Assume this function returns the saved file path
+        scenes = find_scenes(video_file_path)
+        if scenes:
+            return f"Detected scenes: {scenes}"
         else:
-            print("No file provided or file save error.")
-            return "No file provided or file save error", None
+            return "No scenes detected."
     else:
-        print("No valid input received.")
-        return "No input received", None
+        return "No file uploaded."
+
 
 css = """
 body {
