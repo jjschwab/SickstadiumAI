@@ -21,6 +21,7 @@ processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
 def classify_frame(frame):
     categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
+    
     # Load ResNet-50 model
     resnet50 = models.resnet50(pretrained=True)
     resnet50.eval().to(device)
@@ -40,9 +41,11 @@ def classify_frame(frame):
         output = resnet50(input_batch)
         probabilities = F.softmax(output[0], dim=0)
 
-    # Assuming categories correspond to indices (this is for demo, adjust accordingly)
-    results = {categories[i]: probabilities[i].item() for i in range(len(categories))}
-    return results
+    # Create a numpy array from the probabilities of the categories
+    # This example assumes each category is mapped to a model output directly
+    results_array = np.array([probabilities[i].item() for i in range(len(categories))])
+
+    return results_array
 
 
 def download_video(url):
