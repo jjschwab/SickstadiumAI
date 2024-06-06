@@ -59,6 +59,7 @@ def save_uploaded_file(uploaded_file):
     return file_path
 
 def display_results(video_url, video_file, description):
+    print("Starting video processing...")
     if video_url:
         video_path = download_video(video_url)
     elif video_file:
@@ -66,45 +67,39 @@ def display_results(video_url, video_file, description):
     else:
         return "No video provided", None, None
 
+    print(f"Video path: {video_path}")
+
     scenes = find_scenes(video_path)
     if not scenes:
         return "No scenes detected", None, None
 
     best_scene_info = analyze_scenes(video_path, scenes, description)
-    if best_scene_info:
-        # Check if best_scene_info is a dictionary
-        if isinstance(best_scene_info, dict):
-            best_scene = best_scene_info.get('best_scene')
-            sentiment_distribution = best_scene_info.get('sentiment_distribution')
-        # Or if it's a tuple/list
-        elif isinstance(best_scene_info, (tuple, list)):
-            best_scene = best_scene_info[0]
-            sentiment_distribution = best_scene_info[-1]  # Assuming it is the last element
-        else:
-            return "Unexpected data structure from analysis", None, None
+    if not best_scene_info:
+        return "Analysis failed", None, None
 
-        if best_scene:
-            final_clip = extract_best_scene(video_path, best_scene)
-            if final_clip:
-                output_dir = "output"
-                os.makedirs(output_dir, exist_ok=True)
-                final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
-                final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
-                cleanup_temp_files()
+    best_scene, sentiment_distribution = best_scene_info if isinstance(best_scene_info, tuple) else (None, None)
+    print(f"Best scene: {best_scene}, Sentiments: {sentiment_distribution}")
 
-                # Create the radial plot using sentiment_distribution
-                if sentiment_distribution:
-                    plot = create_radial_plot(sentiment_distribution)
-                    return final_clip_path, plot
-                else:
-                    return final_clip_path, "No sentiment data available"
+    if best_scene:
+        final_clip = extract_best_scene(video_path, best_scene)
+        if final_clip:
+            output_dir = "output"
+            os.makedirs(output_dir, exist_ok=True)
+            final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
+            final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
+            cleanup_temp_files()
+
+            print(f"Final clip saved to: {final_clip_path}")
+
+            if sentiment_distribution:
+                plot = create_radial_plot(sentiment_distribution)
+                return final_clip_path, plot
             else:
-                return "No matching scene found", None
+                return final_clip_path, "No sentiment data available"
         else:
-            return "No suitable scenes found", None
-
-    return "Analysis failed", None, None
-
+            return "No matching scene found", None
+    else:
+        return "No suitable scenes found", None
 
 
 # Custom CSS for additional styling
