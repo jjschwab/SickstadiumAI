@@ -49,13 +49,16 @@ class CustomTheme(Base):
 
 custom_theme = CustomTheme()
 
-def save_uploaded_file(uploaded_file):
-    import os
+from datetime import datetime
+
+def save_uploaded_file(uploaded_bytes):
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, uploaded_file.name)
+    # Generate a unique filename using timestamp to avoid overwriting files
+    file_name = f"uploaded_video_{datetime.now().strftime('%Y%m%d%H%M%S')}.mp4"
+    file_path = os.path.join(upload_dir, file_name)
     with open(file_path, "wb") as f:
-        f.write(uploaded_file.file.read())  # Write the content to the new file
+        f.write(uploaded_bytes)
     return file_path
 
 def display_results(video_file):
