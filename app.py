@@ -129,7 +129,7 @@ def display_results(video_url, video_file, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(#eb5726 1px, transparent 1px);
+    background-image: radial-gradient(circle at center, rgba(235, 87, 38, 1) 0%, rgba(235, 87, 38, 0) 70%), radial-gradient(#eb5726 1px, transparent 1px)
     background-size: 10px 10px;
     background-repeat: repeat;
     background-attachment: fixed;
@@ -183,7 +183,7 @@ def save_uploaded_file(uploaded_file):
         f.write(uploaded_file)
     return file_path
 
-with gr.Blocks(theme=custom_theme) as demo:
+with gr.Blocks(theme=custom_theme, css=css)) as demo:
     with gr.Column():
         gr.Markdown("# **Sickstadium AI**", elem_classes="centered-markdown", elem_id="sickstadium-title")
         gr.Markdown("### Upload your videos. Find sick clips. Tell your truth.", elem_classes="centered-markdown")
