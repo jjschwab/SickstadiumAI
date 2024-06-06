@@ -5,6 +5,8 @@ from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
 import uuid
 import os
+import plotly.graph_objects as go
+
 
 class CustomTheme(Base):
     def __init__(
@@ -57,21 +59,29 @@ def save_uploaded_file(uploaded_file):
         f.write(uploaded_file)
     return file_path
     
+import gradio as gr
+from video_processing import process_video, download_video, find_scenes, analyze_scenes, extract_best_scene, cleanup_temp_files
+import plotly.graph_objects as go
+import os
+import uuid
+
+# Assuming CustomTheme and other setups are defined above this snippet
+
 def display_results(video_url, video_file, description):
     if video_url:
         video_path = download_video(video_url)
     elif video_file:
         video_path = save_uploaded_file(video_file)
     else:
-        return "No video provided", None, "No data"
+        return "No video provided", None, None
 
     scenes = find_scenes(video_path)
     if not scenes:
-        return "No scenes detected", None, "No data"
+        return "No scenes detected", None, None
 
     best_scene_times, sentiments = analyze_scenes(video_path, scenes, description)
     if not best_scene_times:
-        return "No matching scene found", None, "No data"
+        return "No matching scene found", None, None
 
     final_clip = extract_best_scene(video_path, best_scene_times)
     if final_clip:
@@ -84,13 +94,34 @@ def display_results(video_url, video_file, description):
         # Calculate the total sum of sentiment scores
         total_score = sum(sentiments.values())
         if total_score == 0:
-            sentiment_display = "\n".join(f"**{k}:** 0%" for k in sentiments)  # Handle case where all scores are zero
-        else:
-            sentiment_display = "\n".join(f"**{k}:** {v / total_score * 100:.1f}%" for k, v in sentiments.items())
+            # Ensure there's no division by zero
+            sentiments = {k: 0 for k in sentiments}
 
-        return final_clip_path, final_clip_path, sentiment_display
+        # Prepare data for the radial chart
+        labels = list(sentiments.keys())
+        values = [v / total_score * 100 for v in sentiments.values()]  # Normalize to percentages
+
+        # Create a polar chart
+        fig = go.Figure(data=go.Scatterpolar(
+            r=values,
+            theta=labels,
+            fill='toself'
+        ))
+
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, max(values) if values else 1]
+                )),
+            showlegend=False
+        )
+
+        return final_clip_path, final_clip_path, fig
     else:
-        return "No matching scene found", None, "No data"
+        return "No matching scene found", None, None
+
+# Assuming Gradio Blocks setup is defined below this snippet
 
         
 
@@ -152,7 +183,7 @@ def save_uploaded_file(uploaded_file):
         f.write(uploaded_file)
     return file_path
 
-with gr.Blocks(theme=custom_theme, css=css) as demo:
+with gr.Blocks(theme=custom_theme) as demo:
     with gr.Column():
         gr.Markdown("# **Sickstadium AI**")
         video_url = gr.Textbox(label="Video URL:")
@@ -161,7 +192,7 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
         submit_button = gr.Button("Process Video")
         video_output = gr.Video(label="Processed Video")
         download_output = gr.File(label="Download Processed Video")
-        sentiment_output = gr.Markdown(label="Sentiment Scores")  # Using Markdown to display sentiment scores
+        sentiment_output = gr.Plot(label="Sentiment Analysis")  # Changed from Markdown to Plot
         submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output, sentiment_output])
 
 demo.launch()
