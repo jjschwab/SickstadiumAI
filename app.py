@@ -70,11 +70,19 @@ def display_results(video_url, video_file, description):
     if not scenes:
         return "No scenes detected", None, None
 
-    final_clip_path, sentiments = analyze_scenes(video_path, scenes, description)
-    if final_clip_path:
-        return final_clip_path, sentiments
+    best_scene, sentiment_distribution = analyze_scenes(video_path, scenes, description)
+    final_clip = extract_best_scene(video_path, best_scene)
+    if final_clip:
+        output_dir = "output"
+        os.makedirs(output_dir, exist_ok=True)
+        final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
+        final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
+        cleanup_temp_files()
+        plot = create_radial_plot(sentiment_distribution)
+        return final_clip_path, plot
     else:
-        return "No matching scene found", None, None
+        return "No matching scene found", None
+
         
 
 # Custom CSS for additional styling
@@ -137,14 +145,27 @@ def save_uploaded_file(uploaded_file):
 
 import matplotlib.pyplot as plt
 
-def create_plot(sentiments):
-    categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
-    fig, ax = plt.subplots()
-    ax.bar(categories, sentiments)
-    ax.set_ylabel('Probability')
-    ax.set_title('Sentiment Distribution')
-    plt.setp(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
-    return fig
+def create_radial_plot(sentiments):
+    # Convert sentiment dictionary to lists
+    labels = list(sentiments.keys())
+    values = list(sentiments.values())
+
+    # Create radial plot
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.fill(angles, values, color='red', alpha=0.25)
+    ax.set_yticklabels([])
+    ax.set_xticks(angles)
+    ax.set_xticklabels(labels)
+
+    # Save plot to a string buffer
+    from io import BytesIO
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    return buf
 
 with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
@@ -154,6 +175,6 @@ with gr.Blocks(theme=custom_theme, css=css) as demo:
         description = gr.Textbox(label="Describe your clip:", elem_id="description")
         submit_button = gr.Button("Process Video", elem_id="submit_button")
         video_output = gr.Video(label="Processed Video", elem_id="video_output")
-        sentiment_plot = gr.Plot(label="Sentiment Analysis", elem_id="sentiment_plot")
-        submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, sentiment_plot])
+        sentiment_plot = gr.Plot(label="Sentiment Distribution")
+        submit_button.click(fn=display_results, inputs=[video_url, video_file, description], outputs=[video_output, download_output, sentiment_plot])
 demo.launch()
