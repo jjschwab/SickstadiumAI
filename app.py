@@ -160,7 +160,7 @@ label[for="description"] {
     color: #eb5726 !important;
 }
 h3 {
-    color: #eb5726;
+    color: #f07102;
 }
 .centered-markdown {
     text-align: center;
