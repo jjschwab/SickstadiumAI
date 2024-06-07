@@ -87,7 +87,7 @@ def extract_frames(video_path, start_time, end_time):
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     # Extract more frames: every frame in the scene
-    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10)):
+    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 25)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
     return frames
