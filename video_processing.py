@@ -104,10 +104,13 @@ def convert_timestamp_to_seconds(timestamp):
     return int(h) * 3600 + int(m) * 60 + s
 
 def extract_frames(video_path, start_time, end_time):
+    start_seconds = convert_timestamp_to_seconds(start_time)
+    end_seconds = convert_timestamp_to_seconds(end_time)
+    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
+
     def extract_frame_at_time(t):
         return video_clip.get_frame(t / video_clip.fps)
 
-    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     frame_times = range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10))
     
     # Create a pool of workers to extract frames in parallel
