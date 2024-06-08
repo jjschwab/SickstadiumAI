@@ -18,15 +18,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
+resnet50 = models.resnet50(pretrained=True).eval().to(device)
+
 
 def classify_frame(frame):
-    categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
-    
-    # Load ResNet-50 model
-    resnet50 = models.resnet50(pretrained=True)
-    resnet50.eval().to(device)
-
-    # Preprocess the image
     preprocess = transforms.Compose([
         transforms.Resize(256),
         transforms.CenterCrop(224),
@@ -36,15 +31,12 @@ def classify_frame(frame):
     input_tensor = preprocess(Image.fromarray(frame))
     input_batch = input_tensor.unsqueeze(0).to(device)
 
-    # Predict with ResNet-50
+    # Use the globally loaded ResNet-50 model
     with torch.no_grad():
         output = resnet50(input_batch)
         probabilities = F.softmax(output[0], dim=0)
 
-    # Create a numpy array from the probabilities of the categories
-    # This example assumes each category is mapped to a model output directly
     results_array = np.array([probabilities[i].item() for i in range(len(categories))])
-
     return results_array
 
 
