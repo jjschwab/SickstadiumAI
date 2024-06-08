@@ -105,31 +105,26 @@ def convert_timestamp_to_seconds(timestamp):
     h, m, s = map(float, timestamp.split(':'))
     return int(h) * 3600 + int(m) * 60 + s
 
-def extract_frame_at_time(video_clip, t):
-    return video_clip.get_frame(t / video_clip.fps)
-
 def extract_frames(video_path, start_time, end_time):
     video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
-    frame_times = range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10))
+    return [video_clip.get_frame(t / video_clip.fps) for t in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10))]
+
+
+def analyze_frame(args):
+    frame, positive_feature, negative_features = args
+    image = Image.fromarray(frame[..., ::-1])
+    image_input = processor(images=image, return_tensors="pt").to(device)
+    with torch.no_grad():
+        image_features = model.get_image_features(**image_input).detach()
+        positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
+        negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
     
-    frames = []
-    with ThreadPoolExecutor() as executor:
-        # Using threads to handle frame extraction
-        frames = list(executor.map(lambda t: extract_frame_at_time(video_clip, t), frame_times))
+    scene_prob = positive_similarity - negative_similarities
+    frame_sentiments = classify_frame(frame)
+    return scene_prob, frame_sentiments
 
-    return frames
-
-def analyze_scene(params):
-    video_path, start_time, end_time, description = params
-    frames = extract_frames(video_path, start_time, end_time)
-    if not frames:
-        print(f"Scene: Start={start_time}, End={end_time} - No frames extracted")
-        return (start_time, end_time, None)  # Adjust as needed for error handling
-
-    scene_prob = 0.0
-    sentiment_distributions = np.zeros(8)  # Assuming there are 8 sentiments
-
-    # Preparing text inputs and features once per scene
+def analyze_scenes(video_path, scenes, description):
+    scene_scores = []
     negative_descriptions = [
         "black screen",
         "Intro text for a video",
@@ -138,54 +133,47 @@ def analyze_scene(params):
         "A still shot of natural scenery",
         "Still-camera shot of a person's face"
     ]
+
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
 
-    for frame in frames:
-        image = Image.fromarray(frame[..., ::-1])
-        image_input = processor(images=image, return_tensors="pt").to(device)
-        with torch.no_grad():
-            image_features = model.get_image_features(**image_input).detach()
-            positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
-            negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
-            scene_prob += positive_similarity - negative_similarities
-        
-        frame_sentiments = classify_frame(frame)
-        sentiment_distributions += np.array(frame_sentiments)
+    tasks = []
+    for start_time, end_time in scenes:
+        frames = extract_frames(video_path, start_time, end_time)
+        for frame in frames:
+            tasks.append((frame, positive_feature, negative_features))
 
-    if len(frames) > 0:
-        sentiment_distributions /= len(frames)  # Normalize to get average probabilities
-        sentiment_percentages = {category: round(prob * 100, 2) for category, prob in zip(categories, sentiment_distributions)}
-        scene_prob /= len(frames)
-        scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
-        print(f"Scene: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}, Sentiments: {sentiment_percentages}")
-        return (start_time, end_time, scene_prob, scene_duration, sentiment_percentages)
-
-    return (start_time, end_time, None)  # Adjust as needed for error handling
-
-from concurrent.futures import ProcessPoolExecutor
-
-def analyze_scenes(video_path, scenes, description):
-    scene_params = [(video_path, start, end, description) for start, end in scenes]
-
-    # Use ProcessPoolExecutor to handle multiprocessing
+    scene_results = {}
     with ProcessPoolExecutor() as executor:
-        results = list(executor.map(analyze_scene, scene_params))
+        results = list(executor.map(analyze_frame, tasks))
 
-    # Process results to find the best scene
-    scene_scores = [result for result in results if result[2] is not None]  # Filter out scenes with no data
-    if scene_scores:
-        scene_scores.sort(reverse=True, key=lambda x: x[2])  # Sort scenes by confidence, highest first
-        top_3_scenes = scene_scores[:3]  # Get the top 3 scenes
-        best_scene = max(top_3_scenes, key=lambda x: x[3])  # Find the longest scene from these top 3
-        if best_scene:
-            print(f"Best Scene: Start={best_scene[0]}, End={best_scene[1]}, Probability={best_scene[2]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
-            return (best_scene[0], best_scene[1]), best_scene[4]  # Returning a tuple with scene times and sentiments
+    for ((start_time, end_time), (scene_prob, sentiments)) in zip(scenes, results):
+        if (start_time, end_time) not in scene_results:
+            scene_results[(start_time, end_time)] = {
+                'probabilities': [],
+                'sentiments': np.zeros(8)
+            }
+        scene_results[(start_time, end_time)]['probabilities'].append(scene_prob)
+        scene_results[(start_time, end_time)]['sentiments'] += sentiments
 
-    print("No suitable scene found")
-    return None, {}
+    # Calculate averages and prepare the final scores
+    for (start_time, end_time), data in scene_results.items():
+        avg_prob = np.mean(data['probabilities'])
+        avg_sentiments = data['sentiments'] / len(data['probabilities'])
+        sentiment_percentages = {category: round(prob * 100, 2) for category, prob in zip(categories, avg_sentiments)}
+        scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
+        scene_scores.append((avg_prob, start_time, end_time, scene_duration, sentiment_percentages))
 
+    # Sort and select the best scene
+    scene_scores.sort(reverse=True, key=lambda x: x[0])
+    top_3_scenes = scene_scores[:3]
+    best_scene = max(top_3_scenes, key=lambda x: x[3])
+
+    if best_scene:
+        return (best_scene[1], best_scene[2]), best_scene[4]
+    else:
+        return None, {}
 
 
 def extract_best_scene(video_path, scene):
