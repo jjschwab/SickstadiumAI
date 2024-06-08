@@ -10,16 +10,23 @@ from PIL import Image
 import uuid
 from torchvision import models, transforms
 from torch.nn import functional as F
+from cachetools import cached, TTLCache
+
 
 categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
 
-
+#initializing CLIP
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
+#initializing ZG placeholder
 resnet50 = models.resnet50(pretrained=True).eval().to(device)
 
+#initialize caches
+scene_cache = TTLCache(maxsize=100, ttl=86400)  # cache up to 100 items, each for 1 day
+frame_cache = TTLCache(maxsize=100, ttl=86400)
+analysis_cache = TTLCache(maxsize=100, ttl=86400)
 
 def classify_frame(frame):
     preprocess = transforms.Compose([
@@ -57,6 +64,7 @@ def download_video(url):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
+@cached(scene_cache, key=lambda video_path: video_path)
 def find_scenes(video_path):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
@@ -73,6 +81,7 @@ def convert_timestamp_to_seconds(timestamp):
     h, m, s = map(float, timestamp.split(':'))
     return int(h) * 3600 + int(m) * 60 + s
 
+@cached(frame_cache, key=lambda video_path, start_time, end_time: f"{video_path}_{start_time}_{end_time}")
 def extract_frames(video_path, start_time, end_time):
     frames = []
     start_seconds = convert_timestamp_to_seconds(start_time)
@@ -86,6 +95,7 @@ def extract_frames(video_path, start_time, end_time):
 
 import numpy as np
 
+@cached(analysis_cache, key=lambda video_path, scenes, description: f"{video_path}_{hash(tuple(scenes))}_{hash(description)}")
 def analyze_scenes(video_path, scenes, description):
     scene_scores = []
     negative_descriptions = [
