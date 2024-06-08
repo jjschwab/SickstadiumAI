@@ -14,6 +14,8 @@ from cachetools import cached, TTLCache
 import numpy as np
 import logging
 from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
+
 
 
 # Setup basic logging
@@ -103,18 +105,17 @@ def convert_timestamp_to_seconds(timestamp):
     h, m, s = map(float, timestamp.split(':'))
     return int(h) * 3600 + int(m) * 60 + s
 
-def extract_frame_at_time(args):
-    video_clip, t = args
+def extract_frame_at_time(video_clip, t):
     return video_clip.get_frame(t / video_clip.fps)
 
 def extract_frames(video_path, start_time, end_time):
     video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
     frame_times = range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10))
     
-    # Create a pool of workers to extract frames in parallel
-    with Pool() as pool:
-        # We need to pass video_clip and t to the function, wrap in tuple
-        frames = pool.map(extract_frame_at_time, ((video_clip, t) for t in frame_times))
+    frames = []
+    with ThreadPoolExecutor() as executor:
+        # Using threads to handle frame extraction
+        frames = list(executor.map(lambda t: extract_frame_at_time(video_clip, t), frame_times))
 
     return frames
 
