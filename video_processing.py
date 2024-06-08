@@ -11,6 +11,7 @@ import uuid
 from torchvision import models, transforms
 from torch.nn import functional as F
 from cachetools import cached, TTLCache
+import numpy as np
 
 
 categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
@@ -28,6 +29,22 @@ scene_cache = TTLCache(maxsize=100, ttl=86400)  # cache up to 100 items, each fo
 frame_cache = TTLCache(maxsize=100, ttl=86400)
 analysis_cache = TTLCache(maxsize=100, ttl=86400)
 
+
+def cache_info_decorator(func, cache):
+    """Decorator to add caching and logging to a function."""
+    key_func = lambda *args, **kwargs: "_".join(map(str, args))  # Simple key func based on str(args)
+
+    @cached(cache, key=key_func)
+    def wrapper(*args, **kwargs):
+        key = key_func(*args, **kwargs)
+        if key in cache:
+            logging.info(f"Cache hit for key: {key}")
+        else:
+            logging.info(f"Cache miss for key: {key}. Caching result.")
+        return func(*args, **kwargs)
+    return wrapper
+
+    
 def classify_frame(frame):
     preprocess = transforms.Compose([
         transforms.Resize(256),
@@ -64,7 +81,7 @@ def download_video(url):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
-@cached(scene_cache, key=lambda video_path: video_path)
+@cache_info_decorator
 def find_scenes(video_path):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
@@ -81,7 +98,7 @@ def convert_timestamp_to_seconds(timestamp):
     h, m, s = map(float, timestamp.split(':'))
     return int(h) * 3600 + int(m) * 60 + s
 
-@cached(frame_cache, key=lambda video_path, start_time, end_time: f"{video_path}_{start_time}_{end_time}")
+@cache_info_decorator
 def extract_frames(video_path, start_time, end_time):
     frames = []
     start_seconds = convert_timestamp_to_seconds(start_time)
@@ -93,9 +110,7 @@ def extract_frames(video_path, start_time, end_time):
         frames.append(frame)
     return frames
 
-import numpy as np
-
-@cached(analysis_cache, key=lambda video_path, scenes, description: f"{video_path}_{hash(tuple(scenes))}_{hash(description)}")
+@cache_info_decorator
 def analyze_scenes(video_path, scenes, description):
     scene_scores = []
     negative_descriptions = [
