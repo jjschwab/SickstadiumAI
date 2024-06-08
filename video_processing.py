@@ -1,3 +1,5 @@
+Let's go back to this version of video_processing.py:
+video_processing.py:
 import os
 import cv2
 from scenedetect import VideoManager, SceneManager
@@ -10,52 +12,23 @@ from PIL import Image
 import uuid
 from torchvision import models, transforms
 from torch.nn import functional as F
-from cachetools import cached, TTLCache
-import numpy as np
-import logging
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import ProcessPoolExecutor
-
-
-
-
-# Setup basic logging
-#logging.basicConfig(level=logging.INFO)
-
 
 categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
 
-#initializing CLIP
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-#initializing ZG placeholder
-resnet50 = models.resnet50(pretrained=True).eval().to(device)
 
-#initialize caches
-#scene_cache = TTLCache(maxsize=100, ttl=86400)  # cache up to 100 items, each for 1 day
-#frame_cache = TTLCache(maxsize=1000, ttl=86400)
-#analysis_cache = TTLCache(maxsize=1000, ttl=86400)
-
-
-def cache_info_decorator(func, cache):
-    """Decorator to add caching and logging to a function."""
-    key_func = lambda *args, **kwargs: "_".join(map(str, args))  # Simple key func based on str(args)
-
-    @cached(cache, key=key_func)
-    def wrapper(*args, **kwargs):
-        key = key_func(*args, **kwargs)
-        if key in cache:
-            logging.info(f"Cache hit for key: {key}")
-        else:
-            logging.info(f"Cache miss for key: {key}. Caching result.")
-        return func(*args, **kwargs)
-    return wrapper
-
-    
 def classify_frame(frame):
+    categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
+    
+    # Load ResNet-50 model
+    resnet50 = models.resnet50(pretrained=True)
+    resnet50.eval().to(device)
+
+    # Preprocess the image
     preprocess = transforms.Compose([
         transforms.Resize(256),
         transforms.CenterCrop(224),
@@ -65,12 +38,15 @@ def classify_frame(frame):
     input_tensor = preprocess(Image.fromarray(frame))
     input_batch = input_tensor.unsqueeze(0).to(device)
 
-    # Use the globally loaded ResNet-50 model
+    # Predict with ResNet-50
     with torch.no_grad():
         output = resnet50(input_batch)
         probabilities = F.softmax(output[0], dim=0)
 
+    # Create a numpy array from the probabilities of the categories
+    # This example assumes each category is mapped to a model output directly
     results_array = np.array([probabilities[i].item() for i in range(len(categories))])
+
     return results_array
 
 
@@ -108,22 +84,17 @@ def convert_timestamp_to_seconds(timestamp):
     return int(h) * 3600 + int(m) * 60 + s
 
 def extract_frames(video_path, start_time, end_time):
-    video_clip = VideoFileClip(video_path).subclip(start_time, end_time)
-    return [video_clip.get_frame(t / video_clip.fps) for t in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10))]
+    frames = []
+    start_seconds = convert_timestamp_to_seconds(start_time)
+    end_seconds = convert_timestamp_to_seconds(end_time)
+    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
+    # Extract more frames: every frame in the scene
+    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10)):
+        frame = video_clip.get_frame(frame_time / video_clip.fps)
+        frames.append(frame)
+    return frames
 
-
-def analyze_frame(args):
-    frame, positive_feature, negative_features = args
-    image = Image.fromarray(frame[..., ::-1])
-    image_input = processor(images=image, return_tensors="pt").to(device)
-    with torch.no_grad():
-        image_features = model.get_image_features(**image_input).detach()
-        positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
-        negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
-    
-    scene_prob = positive_similarity - negative_similarities
-    frame_sentiments = classify_frame(frame)
-    return scene_prob, frame_sentiments
+import numpy as np
 
 def analyze_scenes(video_path, scenes, description):
     scene_scores = []
@@ -140,42 +111,47 @@ def analyze_scenes(video_path, scenes, description):
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
 
-    tasks = []
-    for start_time, end_time in scenes:
+    for scene_num, (start_time, end_time) in enumerate(scenes):
         frames = extract_frames(video_path, start_time, end_time)
+        if not frames:
+            print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time} - No frames extracted")
+            continue
+
+        scene_prob = 0.0
+        sentiment_distributions = np.zeros(8)  # Assuming there are 8 sentiments
         for frame in frames:
-            tasks.append((frame, positive_feature, negative_features))
+            image = Image.fromarray(frame[..., ::-1])
+            image_input = processor(images=image, return_tensors="pt").to(device)
+            with torch.no_grad():
+                image_features = model.get_image_features(**image_input).detach()
+                positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
+                negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
+                scene_prob += positive_similarity - negative_similarities
+            
+            frame_sentiments = classify_frame(frame)
+            sentiment_distributions += np.array(frame_sentiments)
 
-    scene_results = {}
-
-    with ProcessPoolExecutor(max_workers=8) as executor:
-        results = list(executor.map(analyze_frame, tasks))
-
-    for ((start_time, end_time), (scene_prob, sentiments)) in zip(scenes, results):
-        if (start_time, end_time) not in scene_results:
-            scene_results[(start_time, end_time)] = {
-                'probabilities': [],
-                'sentiments': np.zeros(8)
-            }
-        scene_results[(start_time, end_time)]['probabilities'].append(scene_prob)
-        scene_results[(start_time, end_time)]['sentiments'] += sentiments
-
-    # Calculate averages and prepare the final scores
-    for (start_time, end_time), data in scene_results.items():
-        avg_prob = np.mean(data['probabilities'])
-        avg_sentiments = data['sentiments'] / len(data['probabilities'])
-        sentiment_percentages = {category: round(prob * 100, 2) for category, prob in zip(categories, avg_sentiments)}
+        sentiment_distributions /= len(frames)  # Normalize to get average probabilities
+        sentiment_percentages = {category: round(prob * 100, 2) for category, prob in zip(categories, sentiment_distributions)}
+        scene_prob /= len(frames)
         scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
-        scene_scores.append((avg_prob, start_time, end_time, scene_duration, sentiment_percentages))
+        print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}, Sentiments: {sentiment_percentages}")
 
-    # Sort and select the best scene
-    scene_scores.sort(reverse=True, key=lambda x: x[0])
-    top_3_scenes = scene_scores[:3]
-    best_scene = max(top_3_scenes, key=lambda x: x[3])
+        scene_scores.append((scene_prob, start_time, end_time, scene_duration, sentiment_percentages))
+
+        # Sort scenes by confidence, highest first
+        scene_scores.sort(reverse=True, key=lambda x: x[0])
+        
+        # Select the longest scene from the top 3 highest confidence scenes
+        top_3_scenes = scene_scores[:3]  # Get the top 3 scenes
+        best_scene = max(top_3_scenes, key=lambda x: x[3])  # Find the longest scene from these top 3
+
 
     if best_scene:
-        return (best_scene[1], best_scene[2]), best_scene[4]
+        print(f"Best Scene: Start={best_scene[1]}, End={best_scene[2]}, Probability={best_scene[0]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
+        return (best_scene[1], best_scene[2]), best_scene[4]  # Returning a tuple with scene times and sentiments
     else:
+        print("No suitable scene found")
         return None, {}
 
 
