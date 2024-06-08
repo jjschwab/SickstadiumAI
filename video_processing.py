@@ -15,6 +15,8 @@ import numpy as np
 import logging
 from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
+
 
 
 
@@ -145,7 +147,8 @@ def analyze_scenes(video_path, scenes, description):
             tasks.append((frame, positive_feature, negative_features))
 
     scene_results = {}
-    with ProcessPoolExecutor() as executor:
+
+    with ProcessPoolExecutor(max_workers=8) as executor:
         results = list(executor.map(analyze_frame, tasks))
 
     for ((start_time, end_time), (scene_prob, sentiments)) in zip(scenes, results):
