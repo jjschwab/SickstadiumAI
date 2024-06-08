@@ -164,13 +164,15 @@ def analyze_scene(params):
 
     return (start_time, end_time, None)  # Adjust as needed for error handling
 
+from concurrent.futures import ProcessPoolExecutor
+
 def analyze_scenes(video_path, scenes, description):
     scene_params = [(video_path, start, end, description) for start, end in scenes]
-    
-    # Analyze each scene in parallel
-    with Pool(processes=4) as pool:  # You can set the number of processes based on your system's CPU cores
-        results = pool.map(analyze_scene, scene_params)
-    
+
+    # Use ProcessPoolExecutor to handle multiprocessing
+    with ProcessPoolExecutor() as executor:
+        results = list(executor.map(analyze_scene, scene_params))
+
     # Process results to find the best scene
     scene_scores = [result for result in results if result[2] is not None]  # Filter out scenes with no data
     if scene_scores:
@@ -183,6 +185,7 @@ def analyze_scenes(video_path, scenes, description):
 
     print("No suitable scene found")
     return None, {}
+
 
 
 def extract_best_scene(video_path, scene):
