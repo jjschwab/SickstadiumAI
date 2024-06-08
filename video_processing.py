@@ -13,9 +13,11 @@ from torch.nn import functional as F
 from cachetools import cached, TTLCache
 import numpy as np
 import logging
+from multiprocessing import Pool
+
 
 # Setup basic logging
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 
 
 categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
@@ -29,9 +31,9 @@ processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 resnet50 = models.resnet50(pretrained=True).eval().to(device)
 
 #initialize caches
-scene_cache = TTLCache(maxsize=100, ttl=86400)  # cache up to 100 items, each for 1 day
-frame_cache = TTLCache(maxsize=1000, ttl=86400)
-analysis_cache = TTLCache(maxsize=1000, ttl=86400)
+#scene_cache = TTLCache(maxsize=100, ttl=86400)  # cache up to 100 items, each for 1 day
+#frame_cache = TTLCache(maxsize=1000, ttl=86400)
+#analysis_cache = TTLCache(maxsize=1000, ttl=86400)
 
 
 def cache_info_decorator(func, cache):
@@ -85,7 +87,6 @@ def download_video(url):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
-@cache_info_decorator
 def find_scenes(video_path):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
@@ -102,21 +103,30 @@ def convert_timestamp_to_seconds(timestamp):
     h, m, s = map(float, timestamp.split(':'))
     return int(h) * 3600 + int(m) * 60 + s
 
-@cache_info_decorator
 def extract_frames(video_path, start_time, end_time):
-    frames = []
-    start_seconds = convert_timestamp_to_seconds(start_time)
-    end_seconds = convert_timestamp_to_seconds(end_time)
+    def extract_frame_at_time(t):
+        return video_clip.get_frame(t / video_clip.fps)
+
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
-    # Extract more frames: every frame in the scene
-    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10)):
-        frame = video_clip.get_frame(frame_time / video_clip.fps)
-        frames.append(frame)
+    frame_times = range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10))
+    
+    # Create a pool of workers to extract frames in parallel
+    with Pool() as pool:
+        frames = pool.map(extract_frame_at_time, frame_times)
+
     return frames
 
-@cache_info_decorator
-def analyze_scenes(video_path, scenes, description):
-    scene_scores = []
+def analyze_scene(params):
+    video_path, start_time, end_time, description = params
+    frames = extract_frames(video_path, start_time, end_time)
+    if not frames:
+        print(f"Scene: Start={start_time}, End={end_time} - No frames extracted")
+        return (start_time, end_time, None)  # Adjust as needed for error handling
+
+    scene_prob = 0.0
+    sentiment_distributions = np.zeros(8)  # Assuming there are 8 sentiments
+
+    # Preparing text inputs and features once per scene
     negative_descriptions = [
         "black screen",
         "Intro text for a video",
@@ -125,53 +135,51 @@ def analyze_scenes(video_path, scenes, description):
         "A still shot of natural scenery",
         "Still-camera shot of a person's face"
     ]
-
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
 
-    for scene_num, (start_time, end_time) in enumerate(scenes):
-        frames = extract_frames(video_path, start_time, end_time)
-        if not frames:
-            print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time} - No frames extracted")
-            continue
+    for frame in frames:
+        image = Image.fromarray(frame[..., ::-1])
+        image_input = processor(images=image, return_tensors="pt").to(device)
+        with torch.no_grad():
+            image_features = model.get_image_features(**image_input).detach()
+            positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
+            negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
+            scene_prob += positive_similarity - negative_similarities
+        
+        frame_sentiments = classify_frame(frame)
+        sentiment_distributions += np.array(frame_sentiments)
 
-        scene_prob = 0.0
-        sentiment_distributions = np.zeros(8)  # Assuming there are 8 sentiments
-        for frame in frames:
-            image = Image.fromarray(frame[..., ::-1])
-            image_input = processor(images=image, return_tensors="pt").to(device)
-            with torch.no_grad():
-                image_features = model.get_image_features(**image_input).detach()
-                positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
-                negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
-                scene_prob += positive_similarity - negative_similarities
-            
-            frame_sentiments = classify_frame(frame)
-            sentiment_distributions += np.array(frame_sentiments)
-
+    if len(frames) > 0:
         sentiment_distributions /= len(frames)  # Normalize to get average probabilities
         sentiment_percentages = {category: round(prob * 100, 2) for category, prob in zip(categories, sentiment_distributions)}
         scene_prob /= len(frames)
         scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
-        print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}, Sentiments: {sentiment_percentages}")
+        print(f"Scene: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}, Sentiments: {sentiment_percentages}")
+        return (start_time, end_time, scene_prob, scene_duration, sentiment_percentages)
 
-        scene_scores.append((scene_prob, start_time, end_time, scene_duration, sentiment_percentages))
+    return (start_time, end_time, None)  # Adjust as needed for error handling
 
-        # Sort scenes by confidence, highest first
-        scene_scores.sort(reverse=True, key=lambda x: x[0])
-        
-        # Select the longest scene from the top 3 highest confidence scenes
+def analyze_scenes(video_path, scenes, description):
+    scene_params = [(video_path, start, end, description) for start, end in scenes]
+    
+    # Analyze each scene in parallel
+    with Pool(processes=4) as pool:  # You can set the number of processes based on your system's CPU cores
+        results = pool.map(analyze_scene, scene_params)
+    
+    # Process results to find the best scene
+    scene_scores = [result for result in results if result[2] is not None]  # Filter out scenes with no data
+    if scene_scores:
+        scene_scores.sort(reverse=True, key=lambda x: x[2])  # Sort scenes by confidence, highest first
         top_3_scenes = scene_scores[:3]  # Get the top 3 scenes
         best_scene = max(top_3_scenes, key=lambda x: x[3])  # Find the longest scene from these top 3
+        if best_scene:
+            print(f"Best Scene: Start={best_scene[0]}, End={best_scene[1]}, Probability={best_scene[2]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
+            return (best_scene[0], best_scene[1]), best_scene[4]  # Returning a tuple with scene times and sentiments
 
-
-    if best_scene:
-        print(f"Best Scene: Start={best_scene[1]}, End={best_scene[2]}, Probability={best_scene[0]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
-        return (best_scene[1], best_scene[2]), best_scene[4]  # Returning a tuple with scene times and sentiments
-    else:
-        print("No suitable scene found")
-        return None, {}
+    print("No suitable scene found")
+    return None, {}
 
 
 def extract_best_scene(video_path, scene):
