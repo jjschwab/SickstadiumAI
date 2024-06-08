@@ -12,6 +12,10 @@ from torchvision import models, transforms
 from torch.nn import functional as F
 from cachetools import cached, TTLCache
 import numpy as np
+import logging
+
+# Setup basic logging
+logging.basicConfig(level=logging.INFO)
 
 
 categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
@@ -26,8 +30,8 @@ resnet50 = models.resnet50(pretrained=True).eval().to(device)
 
 #initialize caches
 scene_cache = TTLCache(maxsize=100, ttl=86400)  # cache up to 100 items, each for 1 day
-frame_cache = TTLCache(maxsize=100, ttl=86400)
-analysis_cache = TTLCache(maxsize=100, ttl=86400)
+frame_cache = TTLCache(maxsize=1000, ttl=86400)
+analysis_cache = TTLCache(maxsize=1000, ttl=86400)
 
 
 def cache_info_decorator(func, cache):
