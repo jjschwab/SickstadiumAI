@@ -9,3 +9,4 @@ yt-dlp
 torchvision
 plotly
 cachetools
+multiprocessing
