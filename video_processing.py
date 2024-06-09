@@ -1,5 +1,4 @@
-Let's go back to this version of video_processing.py:
-video_processing.py:
+
 import os
 import cv2
 from scenedetect import VideoManager, SceneManager
