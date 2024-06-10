@@ -157,7 +157,7 @@ h3 {
     padding: 10px;
 }
 #sickstadium-title {
-    font-size: 3em !important;
+    font-size: 5em !important;
     font-weight: bold;
     text-transform: uppercase;
 }
