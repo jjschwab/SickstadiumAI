@@ -104,15 +104,15 @@ def analyze_scenes(video_path, scenes, description, batch_size=4):
         #"Still-camera shot of a person's face"
     ]
     preprocess = transforms.Compose([
-        transforms.ToTensor(),  # Convert numpy arrays directly to tensors
-        transforms.Resize((224, 224)),  # Resize the tensor to fit model input
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the tensor
+        transforms.ToTensor(),
+        transforms.Resize((224, 224)),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
-    print("Negative features shape:", negative_features)
+    print("Negative features shape:", negative_features.shape)
     video = VideoFileClip(video_path)
 
     for scene_num, (start_time, end_time) in enumerate(scenes):
@@ -121,10 +121,9 @@ def analyze_scenes(video_path, scenes, description, batch_size=4):
             print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time} - No frames extracted")
             continue
 
-        # Create batches of frames for processing
         batches = [frames[i:i + batch_size] for i in range(0, len(frames), batch_size)]
         scene_prob = 0.0
-        sentiment_distributions = np.zeros(8)  # Assuming there are 8 sentiments
+        sentiment_distributions = np.zeros(8)
 
         for batch in batches:
             batch_tensors = torch.stack([preprocess(frame) for frame in batch]).to(device)
@@ -132,33 +131,29 @@ def analyze_scenes(video_path, scenes, description, batch_size=4):
                 image_features = model.get_image_features(pixel_values=batch_tensors).detach()
                 print("Image Features Shape:", image_features.shape)
 
-                positive_similarities = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0))
-                negative_similarities = torch.cosine_similarity(image_features, negative_features.unsqueeze(0).mean(dim=0, keepdim=True))
-                scene_prob += positive_similarities.mean().item() - negative_similarities.mean().item()
+                positive_similarities = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0).expand_as(image_features))
+                negative_mean = negative_features.mean(dim=0).unsqueeze(0).expand_as(image_features)
+                negative_similarities = torch.cosine_similarity(image_features, negative_mean)
+                scene_prob += (positive_similarities.mean().item() - negative_similarities.mean().item())
 
-            # Sum up the sentiments for all frames in the batch
             for frame in batch:
                 frame_sentiments = classify_frame(frame)
                 sentiment_distributions += np.array(frame_sentiments)
 
-        sentiment_distributions /= len(frames)  # Normalize to get average probabilities
+        sentiment_distributions /= len(frames)
         sentiment_percentages = {category: round(prob * 100, 2) for category, prob in zip(categories, sentiment_distributions)}
         scene_prob /= len(frames)
         scene_duration = convert_timestamp_to_seconds(end_time) - convert_timestamp_to_seconds(start_time)
         print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time}, Probability={scene_prob}, Duration={scene_duration}, Sentiments: {sentiment_percentages}")
 
         scene_scores.append((scene_prob, start_time, end_time, scene_duration, sentiment_percentages))
-
-        # Sort scenes by confidence, highest first
         scene_scores.sort(reverse=True, key=lambda x: x[0])
-        
-        # Select the longest scene from the top 3 highest confidence scenes
-        top_3_scenes = scene_scores[:3]  # Get the top 3 scenes
-        best_scene = max(top_3_scenes, key=lambda x: x[3])  # Find the longest scene from these top 3
+        top_3_scenes = scene_scores[:3]
+        best_scene = max(top_3_scenes, key=lambda x: x[3])
 
     if best_scene:
         print(f"Best Scene: Start={best_scene[1]}, End={best_scene[2]}, Probability={best_scene[0]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
-        return (best_scene[1], best_scene[2]), best_scene[4]  # Returning a tuple with scene times and sentiments
+        return (best_scene[1], best_scene[2]), best_scene[4]
     else:
         print("No suitable scene found")
         return None, {}
