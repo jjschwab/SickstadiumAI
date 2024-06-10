@@ -66,19 +66,15 @@ def download_video(url):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
-def find_scenes(video_path, sample_rate=3, downscale_factor=2.2):
+def find_scenes(video_path, downscale_factor=2.2):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector(threshold=33))
-    
-    video_manager.set_downscale_factor(downscale_factor)
-    video_manager.set_duration(start_time=None, end_time=None, frame_skip=sample_rate)  # Skip frames
+    scene_manager.add_detector(ContentDetector(threshold=33))  # Adjusted threshold for finer segmentation
+    video_manager.set_downscale_factor(donwscale_factor)
     video_manager.start()
-
     scene_manager.detect_scenes(frame_source=video_manager)
     scene_list = scene_manager.get_scene_list()
     video_manager.release()
-
     scenes = [(start.get_timecode(), end.get_timecode()) for start, end in scene_list]
     return scenes
 
@@ -92,7 +88,7 @@ def extract_frames(video_path, start_time, end_time):
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     # Extract more frames: every frame in the scene
-    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 10)):
+    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 20)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
     return frames
