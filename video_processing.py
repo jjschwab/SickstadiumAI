@@ -11,6 +11,8 @@ from PIL import Image
 import uuid
 from torchvision import models, transforms
 from torch.nn import functional as F
+import numpy as np
+
 
 categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
 
@@ -66,7 +68,7 @@ def download_video(url):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
-def find_scenes(video_path, downscale_factor=10):
+def find_scenes(video_path, downscale_factor=50):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
     scene_manager.add_detector(ContentDetector(threshold=33))  # Adjusted threshold for finer segmentation
@@ -88,12 +90,10 @@ def extract_frames(video_path, start_time, end_time):
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     # Extract more frames: every frame in the scene
-    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 20)):
+    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 4)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
     return frames
-
-import numpy as np
 
 def analyze_scenes(video_path, scenes, description):
     scene_scores = []
@@ -103,7 +103,7 @@ def analyze_scenes(video_path, scenes, description):
         "dark scene without much contrast",
         "No people are in this scene",
         "A still shot of natural scenery",
-        "Still-camera shot of a person's face"
+        #"Still-camera shot of a person's face"
     ]
 
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
@@ -163,28 +163,6 @@ def extract_best_scene(video_path, scene):
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
     return video_clip
-
-def process_video(video_url, description):
-    video_path = download_video(video_url)
-    scenes = find_scenes(video_path)
-    best_scene = analyze_scenes(video_path, scenes, description)
-    final_clip = extract_best_scene(video_path, best_scene)
-
-    if final_clip:
-        # Assuming final_clip is a MoviePy VideoFileClip object
-        frame = np.array(final_clip.get_frame(0))  # Get the first frame at t=0 seconds
-        frame_classification = classify_frame(frame)  # Classify the frame
-        print("Frame classification probabilities:", frame_classification)
-
-        output_dir = "output"
-        os.makedirs(output_dir, exist_ok=True)
-        final_clip_path = os.path.join(output_dir, f"{uuid.uuid4()}_final_clip.mp4")
-        final_clip.write_videofile(final_clip_path, codec='libx264', audio_codec='aac')
-        cleanup_temp_files()
-        return final_clip_path
-
-    return None
-
 
 def cleanup_temp_files():
     temp_dir = 'temp_videos'
