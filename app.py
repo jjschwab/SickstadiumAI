@@ -57,14 +57,6 @@ def save_uploaded_file(uploaded_file):
     with open(file_path, "wb") as f:
         f.write(uploaded_file)
     return file_path
-    
-import gradio as gr
-from video_processing import process_video, download_video, find_scenes, analyze_scenes, extract_best_scene, cleanup_temp_files
-import plotly.graph_objects as go
-import os
-import uuid
-
-# Assuming CustomTheme and other setups are defined above this snippet
 
 def display_results(video_url, video_file, description):
     if video_url:
@@ -119,9 +111,6 @@ def display_results(video_url, video_file, description):
         return final_clip_path, final_clip_path, fig
     else:
         return "No matching scene found", None, None
-
-# Assuming Gradio Blocks setup is defined below this snippet
-
         
 
 # Custom CSS for additional styling
@@ -173,15 +162,6 @@ h3 {
     text-transform: uppercase;
 }
 """
-
-
-def save_uploaded_file(uploaded_file):
-    upload_dir = "uploaded_videos"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, f"{uuid.uuid4()}.mp4")
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file)
-    return file_path
 
 with gr.Blocks(theme=custom_theme, css=css) as demo:
     with gr.Column():
