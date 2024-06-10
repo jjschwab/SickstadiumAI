@@ -82,11 +82,11 @@ def convert_timestamp_to_seconds(timestamp):
     h, m, s = map(float, timestamp.split(':'))
     return int(h) * 3600 + int(m) * 60 + s
 
-def extract_frames(video_path, start_time, end_time):
+def extract_frames(video, start_time, end_time):
     frames = []
     start_seconds = convert_timestamp_to_seconds(start_time)
     end_seconds = convert_timestamp_to_seconds(end_time)
-    video_clip = VideoFileClip(video_path).subclip(start_seconds, end_seconds)
+    video_clip = video.subclip(start_seconds, end_seconds)
 
     for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 3)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
@@ -108,8 +108,10 @@ def analyze_scenes(video_path, scenes, description):
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
 
+    video = VideoFileClip(video_path)
+
     for scene_num, (start_time, end_time) in enumerate(scenes):
-        frames = extract_frames(video_path, start_time, end_time)
+        frames = extract_frames(video, start_time, end_time)
         if not frames:
             print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time} - No frames extracted")
             continue
