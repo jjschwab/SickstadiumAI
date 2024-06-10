@@ -93,7 +93,7 @@ def extract_frames(video, start_time, end_time):
         frames.append(frame)
     return frames
 
-def analyze_scenes(video_path, scenes, description, batch_size=4):
+def analyze_scenes(video_path, scenes, description, batch_size=10):
     scene_scores = []
     negative_descriptions = [
         "black screen",
@@ -112,7 +112,7 @@ def analyze_scenes(video_path, scenes, description, batch_size=4):
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
-    print("Negative features shape:", negative_features.shape)
+    #print("Negative features shape:", negative_features.shape)
     video = VideoFileClip(video_path)
 
     for scene_num, (start_time, end_time) in enumerate(scenes):
@@ -129,7 +129,7 @@ def analyze_scenes(video_path, scenes, description, batch_size=4):
             batch_tensors = torch.stack([preprocess(frame) for frame in batch]).to(device)
             with torch.no_grad():
                 image_features = model.get_image_features(pixel_values=batch_tensors).detach()
-                print("Image Features Shape:", image_features.shape)
+                #print("Image Features Shape:", image_features.shape)
 
                 positive_similarities = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0).expand_as(image_features))
                 negative_mean = negative_features.mean(dim=0).unsqueeze(0).expand_as(image_features)
