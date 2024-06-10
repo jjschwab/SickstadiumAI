@@ -93,7 +93,7 @@ def extract_frames(video, start_time, end_time):
         frames.append(frame)
     return frames
 
-def analyze_scenes(video_path, scenes, description):
+def analyze_scenes(video_path, scenes, description, batch_size=6):
     scene_scores = []
     negative_descriptions = [
         "black screen",
@@ -103,10 +103,9 @@ def analyze_scenes(video_path, scenes, description):
         #"A still shot of natural scenery",
         #"Still-camera shot of a person's face"
     ]
-
-    preprocess = transforms.Compose([
-        transforms.ToTensor(),  # Directly convert numpy arrays to tensors
-        transforms.Resize((224, 224)),  # Resize the tensor
+preprocess = transforms.Compose([
+        transforms.ToTensor(),  # Convert numpy arrays directly to tensors
+        transforms.Resize((224, 224)),  # Resize the tensor to fit model input
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the tensor
     ])
 
@@ -122,19 +121,23 @@ def analyze_scenes(video_path, scenes, description):
             print(f"Scene {scene_num + 1}: Start={start_time}, End={end_time} - No frames extracted")
             continue
 
+        # Create batches of frames for processing
+        batches = [frames[i:i + batch_size] for i in range(0, len(frames), batch_size)]
         scene_prob = 0.0
         sentiment_distributions = np.zeros(8)  # Assuming there are 8 sentiments
-        for frame in frames:
-            # Directly preprocess the frame
-            frame_tensor = preprocess(frame).unsqueeze(0).to(device)  # Add batch dimension and send to device
+
+        for batch in batches:
+            batch_tensors = torch.stack([preprocess(frame) for frame in batch]).to(device)
             with torch.no_grad():
-                image_features = model.get_image_features(pixel_values=frame_tensor).detach()
-                positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
-                negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
-                scene_prob += positive_similarity - negative_similarities
-            
-            frame_sentiments = classify_frame(frame)
-            sentiment_distributions += np.array(frame_sentiments)
+                image_features = model.get_image_features(pixel_values=batch_tensors).detach()
+                positive_similarities = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0))
+                negative_similarities = torch.cosine_similarity(image_features, negative_features.unsqueeze(0).mean(dim=0, keepdim=True))
+                scene_prob += positive_similarities.mean().item() - negative_similarities.mean().item()
+
+            # Sum up the sentiments for all frames in the batch
+            for frame in batch:
+                frame_sentiments = classify_frame(frame)
+                sentiment_distributions += np.array(frame_sentiments)
 
         sentiment_distributions /= len(frames)  # Normalize to get average probabilities
         sentiment_percentages = {category: round(prob * 100, 2) for category, prob in zip(categories, sentiment_distributions)}
