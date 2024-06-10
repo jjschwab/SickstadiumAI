@@ -104,6 +104,12 @@ def analyze_scenes(video_path, scenes, description):
         #"Still-camera shot of a person's face"
     ]
 
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),  # Directly convert numpy arrays to tensors
+        transforms.Resize((224, 224)),  # Resize the tensor
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the tensor
+    ])
+
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
@@ -119,10 +125,10 @@ def analyze_scenes(video_path, scenes, description):
         scene_prob = 0.0
         sentiment_distributions = np.zeros(8)  # Assuming there are 8 sentiments
         for frame in frames:
-            image = Image.fromarray(frame[..., ::-1])
-            image_input = processor(images=image, return_tensors="pt").to(device)
+            # Directly preprocess the frame
+            frame_tensor = preprocess(frame).unsqueeze(0).to(device)  # Add batch dimension and send to device
             with torch.no_grad():
-                image_features = model.get_image_features(**image_input).detach()
+                image_features = model.get_image_features(pixel_values=frame_tensor).detach()
                 positive_similarity = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0)).squeeze().item()
                 negative_similarities = torch.cosine_similarity(image_features, negative_features).squeeze().mean().item()
                 scene_prob += positive_similarity - negative_similarities
@@ -144,7 +150,6 @@ def analyze_scenes(video_path, scenes, description):
         # Select the longest scene from the top 3 highest confidence scenes
         top_3_scenes = scene_scores[:3]  # Get the top 3 scenes
         best_scene = max(top_3_scenes, key=lambda x: x[3])  # Find the longest scene from these top 3
-
 
     if best_scene:
         print(f"Best Scene: Start={best_scene[1]}, End={best_scene[2]}, Probability={best_scene[0]}, Duration={best_scene[3]}, Sentiments: {best_scene[4]}")
