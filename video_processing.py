@@ -100,8 +100,8 @@ def analyze_scenes(video_path, scenes, description, batch_size=16):
         "Intro text for a video",
         "dark scene without much contrast",
         "No people are in this scene",
-        #"A still shot of natural scenery",
-        #"Still-camera shot of a person's face"
+        "A still shot of natural scenery",
+        "Still-camera shot of a person's face"
     ]
     preprocess = transforms.Compose([
         transforms.ToTensor(),
