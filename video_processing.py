@@ -112,7 +112,7 @@ def analyze_scenes(video_path, scenes, description, batch_size=4):
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
-    print("Negative features shape:", negative_features.shape())
+    print("Negative features shape:", negative_features)
     video = VideoFileClip(video_path)
 
     for scene_num, (start_time, end_time) in enumerate(scenes):
