@@ -66,15 +66,19 @@ def download_video(url):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in " .-_()" else "_" for c in filename])
 
-def find_scenes(video_path):
+def find_scenes(video_path, sample_rate=3, downscale_factor=2):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector(threshold=33))  # Adjusted threshold for finer segmentation
-    video_manager.set_downscale_factor()
+    scene_manager.add_detector(ContentDetector(threshold=33))
+    
+    video_manager.set_downscale_factor(downscale_factor)
+    video_manager.set_duration(start_time=None, end_time=None, frame_skip=sample_rate)  # Skip frames
     video_manager.start()
+
     scene_manager.detect_scenes(frame_source=video_manager)
     scene_list = scene_manager.get_scene_list()
     video_manager.release()
+
     scenes = [(start.get_timecode(), end.get_timecode()) for start, end in scene_list]
     return scenes
 
