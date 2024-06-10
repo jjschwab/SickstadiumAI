@@ -88,12 +88,12 @@ def extract_frames(video, start_time, end_time):
     end_seconds = convert_timestamp_to_seconds(end_time)
     video_clip = video.subclip(start_seconds, end_seconds)
 
-    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 3)):
+    for frame_time in range(0, int(video_clip.duration * video_clip.fps), int(video_clip.fps / 4)):
         frame = video_clip.get_frame(frame_time / video_clip.fps)
         frames.append(frame)
     return frames
 
-def analyze_scenes(video_path, scenes, description, batch_size=16):
+def analyze_scenes(video_path, scenes, description, batch_size=20):
     scene_scores = []
     negative_descriptions = [
         "black screen",
