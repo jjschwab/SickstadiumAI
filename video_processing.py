@@ -103,7 +103,7 @@ def analyze_scenes(video_path, scenes, description, batch_size=6):
         #"A still shot of natural scenery",
         #"Still-camera shot of a person's face"
     ]
-preprocess = transforms.Compose([
+    preprocess = transforms.Compose([
         transforms.ToTensor(),  # Convert numpy arrays directly to tensors
         transforms.Resize((224, 224)),  # Resize the tensor to fit model input
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the tensor
