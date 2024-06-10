@@ -21,14 +21,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
+# Load ResNet-50 model
+resnet50 = models.resnet50(pretrained=True)
+resnet50.eval().to(device)
+
 
 def classify_frame(frame):
-    categories = ["Joy", "Trust", "Fear", "Surprise", "Sadness", "Disgust", "Anger", "Anticipation"]
-    
-    # Load ResNet-50 model
-    resnet50 = models.resnet50(pretrained=True)
-    resnet50.eval().to(device)
-
     # Preprocess the image
     preprocess = transforms.Compose([
         transforms.Resize(256),
