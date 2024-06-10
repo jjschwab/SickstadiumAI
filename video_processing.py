@@ -112,7 +112,7 @@ def analyze_scenes(video_path, scenes, description, batch_size=4):
     text_inputs = processor(text=[description] + negative_descriptions, return_tensors="pt", padding=True).to(device)
     text_features = model.get_text_features(**text_inputs).detach()
     positive_feature, negative_features = text_features[0], text_features[1:]
-
+    print("Negative features shape:", negative_features.shape())
     video = VideoFileClip(video_path)
 
     for scene_num, (start_time, end_time) in enumerate(scenes):
@@ -130,6 +130,8 @@ def analyze_scenes(video_path, scenes, description, batch_size=4):
             batch_tensors = torch.stack([preprocess(frame) for frame in batch]).to(device)
             with torch.no_grad():
                 image_features = model.get_image_features(pixel_values=batch_tensors).detach()
+                print("Image Features Shape:", image_features.shape)
+
                 positive_similarities = torch.cosine_similarity(image_features, positive_feature.unsqueeze(0))
                 negative_similarities = torch.cosine_similarity(image_features, negative_features.unsqueeze(0).mean(dim=0, keepdim=True))
                 scene_prob += positive_similarities.mean().item() - negative_similarities.mean().item()
