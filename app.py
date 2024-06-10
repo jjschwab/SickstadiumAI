@@ -1,5 +1,5 @@
 import gradio as gr
-from video_processing import process_video, download_video, find_scenes, analyze_scenes, extract_best_scene, cleanup_temp_files
+from video_processing import download_video, find_scenes, analyze_scenes, extract_best_scene, cleanup_temp_files
 from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
 from typing import Iterable
