@@ -117,7 +117,7 @@ def display_results(video_url, video_file, description):
 css = """
 body {
     background-color: #ffffff;
-    background-image: radial-gradient(#eb5726 1px, transparent 1px);
+    background-image: radial-gradient(#e83f07 2px, transparent 1px);
     background-size: 10px 10px;
     background-repeat: repeat;
     background-attachment: fixed;
