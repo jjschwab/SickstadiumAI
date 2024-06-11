@@ -119,12 +119,12 @@ body {
     background-image: radial-gradient(#e83f07 1px, transparent 1px);
     background-size: 10px 10px;
     background-repeat: repeat;
-    animation: adjustHue 120s infinite linear;
+    animation: adjustHue 80s infinite linear;
 }
 
 @keyframes adjustHue {
     0% { filter: hue-rotate(0deg); }  
-    50% { filter: hue-rotate(30deg); }  
+    50% { filter: hue-rotate(60deg); }  
     100% { filter: hue-rotate(0deg); }
 }
 #video_url {
