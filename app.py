@@ -124,9 +124,7 @@ body {
 
 @keyframes adjustHue {
     0% { filter: hue-rotate(0deg); }  
-    25% { filter: hue-rotate(30deg); }  
     50% { filter: hue-rotate(60deg); }  
-    75% { filter: hue-rotate(30deg); } 
     100% { filter: hue-rotate(0deg); }
 }
 #video_url {
