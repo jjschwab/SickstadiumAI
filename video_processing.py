@@ -93,7 +93,7 @@ def extract_frames(video, start_time, end_time):
         frames.append(frame)
     return frames
 
-def analyze_scenes(video_path, scenes, description, batch_size=40):
+def analyze_scenes(video_path, scenes, description, batch_size=47):
     scene_scores = []
     negative_descriptions = [
         "black screen",
