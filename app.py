@@ -116,10 +116,10 @@ def display_results(video_url, video_file, description):
 # Custom CSS for additional styling
 css = """
 body {
-    background-image: radial-gradient(circle, #FF4500 3px, transparent 5px, #007FFF 7px, transparent 9px, #FF4500 11px, transparent 13px, #007FFF 15px, transparent 17px, #FF4500 19px, transparent 21px, #007FFF 23px, transparent 25px, #FF4500 27px, transparent 29px, #007FFF 31px, transparent 33px);
-    background-size: 30px 30px;
+    background-image: radial-gradient(#e83f07 1px, transparent 1px);
+    background-size: 10px 10px;
     background-repeat: repeat;
-    animation: adjustHue 10s infinite linear;
+    animation: adjustHue 20s infinite linear;
 }
 
 @keyframes adjustHue {
