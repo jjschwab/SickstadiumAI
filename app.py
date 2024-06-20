@@ -119,7 +119,6 @@ body {
     background-image: radial-gradient(#e83f07 1px, transparent 1px);
     background-size: 10px 10px;
     background-repeat: repeat;
-    animation: adjustHue 80s infinite linear;
 }
 
 @keyframes adjustHue {
