@@ -93,7 +93,7 @@ def extract_frames(video, start_time, end_time):
         frames.append(frame)
     return frames
 
-def analyze_scenes(video_path, scenes, description, batch_size=60):
+def analyze_scenes(video_path, scenes, description, batch_size=65):
     scene_scores = []
     negative_descriptions = [
         "black screen",
@@ -101,7 +101,8 @@ def analyze_scenes(video_path, scenes, description, batch_size=60):
         "dark scene without much contrast",
         "No people are in this scene",
         "A still shot of natural scenery",
-        "Still-camera shot of a person's face"
+        "Still-camera shot of a person's face",
+        "One lazy dog on a log"
     ]
     preprocess = transforms.Compose([
         transforms.ToTensor(),
