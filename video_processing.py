@@ -22,7 +22,7 @@ model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
 # Load ResNet-50 model
-resnet50 = models.resnet50(pretrained=True)
+resnet50 = models.resnet50(pretrained=True) #Using a default Resnet model until we have an empirically validated Zeitgeist model
 resnet50.eval().to(device)
 
 
@@ -43,7 +43,6 @@ def classify_frame(frame):
         probabilities = F.softmax(output[0], dim=0)
 
     # Create a numpy array from the probabilities of the categories
-    # This example assumes each category is mapped to a model output directly
     results_array = np.array([probabilities[i].item() for i in range(len(categories))])
 
     return results_array
@@ -69,7 +68,7 @@ def sanitize_filename(filename):
 def find_scenes(video_path):
     video_manager = VideoManager([video_path])
     scene_manager = SceneManager()
-    scene_manager.add_detector(ContentDetector(threshold=33))  # Adjusted threshold for finer segmentation
+    scene_manager.add_detector(ContentDetector(threshold=33))  
     video_manager.set_downscale_factor()
     video_manager.start()
     scene_manager.detect_scenes(frame_source=video_manager)
